@@ -1,24 +1,23 @@
-use std::ops::{Add, Deref, DerefMut, Div, Mul, Neg, Sub};
+use std::ops::{Add, Deref, Div, Mul, Neg, Sub};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Tuple {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub w: f32,
-}
+pub struct Tuple([f32; 4]);
 
 impl Tuple {
-    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Self {
-        Self { x, y, z, w }
-    }
-
     pub fn equal_approx(&self, other: Self) -> bool {
         const EPSILON: f32 = 1e-5;
-        (self.x - other.x).abs() < EPSILON
-            && (self.y - other.y).abs() < EPSILON
-            && (self.z - other.z).abs() < EPSILON
-            && (self.w - other.w).abs() < EPSILON
+        (self.0[0] - other.0[0]).abs() < EPSILON
+            && (self.0[1] - other.0[1]).abs() < EPSILON
+            && (self.0[2] - other.0[2]).abs() < EPSILON
+            && (self.0[3] - other.0[3]).abs() < EPSILON
+    }
+}
+
+impl Deref for Tuple {
+    type Target = [f32; 4];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -26,12 +25,12 @@ impl Add for Tuple {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self {
-        Self {
-            x: self.x + rhs.x,
-            y: self.y + rhs.y,
-            z: self.z + rhs.z,
-            w: self.w + rhs.w,
-        }
+        Self([
+            self.0[0] + rhs.0[0],
+            self.0[1] + rhs.0[1],
+            self.0[2] + rhs.0[2],
+            self.0[3] + rhs.0[3],
+        ])
     }
 }
 
@@ -39,12 +38,12 @@ impl Sub for Tuple {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Self {
-            x: self.x - rhs.x,
-            y: self.y - rhs.y,
-            z: self.z - rhs.z,
-            w: self.w - rhs.w,
-        }
+        Self([
+            self.0[0] - rhs.0[0],
+            self.0[1] - rhs.0[1],
+            self.0[2] - rhs.0[2],
+            self.0[3] - rhs.0[3],
+        ])
     }
 }
 
@@ -52,12 +51,20 @@ impl Neg for Tuple {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
-        Self {
-            x: -self.x,
-            y: -self.y,
-            z: -self.z,
-            w: -self.w,
-        }
+        Self([-self.0[0], -self.0[1], -self.0[2], -self.0[3]])
+    }
+}
+
+impl Mul for Tuple {
+    type Output = Tuple;
+
+    fn mul(self, rhs: Tuple) -> Self::Output {
+        Tuple([
+            self.0[0] * rhs.0[0],
+            self.0[1] * rhs.0[1],
+            self.0[2] * rhs.0[2],
+            self.0[3] * rhs.0[3],
+        ])
     }
 }
 
@@ -65,12 +72,12 @@ impl Mul<Tuple> for f32 {
     type Output = Tuple;
 
     fn mul(self, rhs: Tuple) -> Self::Output {
-        Tuple {
-            x: self * rhs.x,
-            y: self * rhs.y,
-            z: self * rhs.z,
-            w: self * rhs.w,
-        }
+        Tuple([
+            self * rhs.0[0],
+            self * rhs.0[1],
+            self * rhs.0[2],
+            self * rhs.0[3],
+        ])
     }
 }
 
@@ -78,12 +85,12 @@ impl Div<f32> for Tuple {
     type Output = Self;
 
     fn div(self, rhs: f32) -> Self::Output {
-        Self {
-            x: self.x / rhs,
-            y: self.y / rhs,
-            z: self.z / rhs,
-            w: self.w / rhs,
-        }
+        Self([
+            self.0[0] / rhs,
+            self.0[1] / rhs,
+            self.0[2] / rhs,
+            self.0[3] / rhs,
+        ])
     }
 }
 
@@ -94,25 +101,27 @@ pub struct Point(Tuple);
 
 impl Point {
     pub fn new(x: f32, y: f32, z: f32) -> Self {
-        Self(Tuple::new(x, y, z, 1.))
+        Self(Tuple([x, y, z, 1.]))
+    }
+
+    pub fn x(&self) -> f32 {
+        self.0[0]
+    }
+
+    pub fn y(&self) -> f32 {
+        self.0[1]
+    }
+
+    pub fn z(&self) -> f32 {
+        self.0[2]
+    }
+
+    pub fn w(&self) -> f32 {
+        self.0[3]
     }
 
     pub fn equal_approx(&self, other: Self) -> bool {
         self.0.equal_approx(other.0)
-    }
-}
-
-impl Deref for Point {
-    type Target = Tuple;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for Point {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
     }
 }
 
@@ -139,7 +148,23 @@ pub struct Vector(Tuple);
 
 impl Vector {
     pub fn new(x: f32, y: f32, z: f32) -> Self {
-        Self(Tuple::new(x, y, z, 0.))
+        Self(Tuple([x, y, z, 0.]))
+    }
+
+    pub fn x(&self) -> f32 {
+        self.0[0]
+    }
+
+    pub fn y(&self) -> f32 {
+        self.0[1]
+    }
+
+    pub fn z(&self) -> f32 {
+        self.0[2]
+    }
+
+    pub fn w(&self) -> f32 {
+        self.0[3]
     }
 
     pub fn equal_approx(&self, other: Self) -> bool {
@@ -147,7 +172,7 @@ impl Vector {
     }
 
     pub fn magnitude(&self) -> f32 {
-        (self.x.powi(2) + self.y.powi(2) + self.z.powi(2) + self.w.powi(2)).sqrt()
+        (self.x().powi(2) + self.y().powi(2) + self.z().powi(2) + self.w().powi(2)).sqrt()
     }
 
     pub fn normalize(&self) -> Self {
@@ -155,29 +180,15 @@ impl Vector {
     }
 
     pub fn dot(&self, other: Self) -> f32 {
-        self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
+        self.x() * other.x() + self.y() * other.y() + self.z() * other.z() + self.w() * other.w()
     }
 
     pub fn cross(&self, other: Self) -> Self {
         Self::new(
-            self.y * other.z - self.z * other.y,
-            self.z * other.x - self.x * other.z,
-            self.x * other.y - self.y * other.x,
+            self.y() * other.z() - self.z() * other.y(),
+            self.z() * other.x() - self.x() * other.z(),
+            self.x() * other.y() - self.y() * other.x(),
         )
-    }
-}
-
-impl Deref for Vector {
-    type Target = Tuple;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for Vector {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
     }
 }
 
@@ -223,15 +234,86 @@ impl Div<f32> for Vector {
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Color(Tuple);
+
+impl Color {
+    pub fn new(r: f32, g: f32, b: f32) -> Self {
+        Self(Tuple([r, g, b, 0.]))
+    }
+
+    pub fn r(&self) -> f32 {
+        self.0[0]
+    }
+
+    pub fn g(&self) -> f32 {
+        self.0[1]
+    }
+
+    pub fn b(&self) -> f32 {
+        self.0[2]
+    }
+
+    pub fn r_u8(&self) -> u8 {
+        (0_f32.max(self.0[0]).min(1.) * 255.).round() as u8
+    }
+
+    pub fn g_u8(&self) -> u8 {
+        (0_f32.max(self.0[1]).min(1.) * 255.).round() as u8
+    }
+
+    pub fn b_u8(&self) -> u8 {
+        (0_f32.max(self.0[2]).min(1.) * 255.).round() as u8
+    }
+
+    pub fn equal_approx(&self, other: Self) -> bool {
+        self.0.equal_approx(other.0)
+    }
+}
+
+impl Add for Color {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self {
+        Self(self.0 + rhs.0)
+    }
+}
+
+impl Sub for Color {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self(self.0 - rhs.0)
+    }
+}
+
+impl Mul for Color {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self(self.0 * rhs.0)
+    }
+}
+
+impl Mul<f32> for Color {
+    type Output = Self;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Self(rhs * self.0)
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn basic_ops() {
-        let t1 = Tuple::new(3., -2., 5., 1.);
-        let t2 = Tuple::new(-2., 3., 1., 0.);
-        assert!(t1 + t2 == Tuple::new(1., 1., 6., 1.));
+        let t1 = Tuple([3., -2., 5., 1.]);
+        let t2 = Tuple([-2., 3., 1., 0.]);
+        assert!(t1 + t2 == Tuple([1., 1., 6., 1.]));
 
         let p1 = Point::new(3., 2., 1.);
         let p2 = Point::new(5., 6., 7.);
@@ -245,18 +327,18 @@ mod tests {
         let v2 = Vector::new(5., 6., 7.);
         assert!(v1 - v2 == Vector::new(-2., -4., -6.));
 
-        let t = Tuple::new(1., -2., 3., -4.);
-        assert!(-t == Tuple::new(-1., 2., -3., 4.));
+        let t = Tuple([1., -2., 3., -4.]);
+        assert!(-t == Tuple([-1., 2., -3., 4.]));
         let v = Vector::new(1., -2., 3.);
         assert!(-v == Vector::new(-1., 2., -3.));
 
-        let t = Tuple::new(1., -2., 3., -4.);
-        assert!(3.5 * t == Tuple::new(3.5, -7., 10.5, -14.));
+        let t = Tuple([1., -2., 3., -4.]);
+        assert!(3.5 * t == Tuple([3.5, -7., 10.5, -14.]));
         let v = Vector::new(1., -2., 3.);
         assert!(3.5 * v == Vector::new(3.5, -7., 10.5));
 
-        let t = Tuple::new(1., -2., 3., -4.);
-        assert!(t / 2. == Tuple::new(0.5, -1., 1.5, -2.));
+        let t = Tuple([1., -2., 3., -4.]);
+        assert!(t / 2. == Tuple([0.5, -1., 1.5, -2.]));
         let v = Vector::new(1., -2., 3.);
         assert!(v / 2. == Vector::new(0.5, -1., 1.5));
 
@@ -279,5 +361,17 @@ mod tests {
         let v2 = Vector::new(2., 3., 4.);
         assert!(v1.cross(v2) == Vector::new(-1., 2., -1.));
         assert!(v2.cross(v1) == Vector::new(1., -2., 1.));
+
+        let c = Color::new(0.2, 0.3, 0.4);
+        assert!(c * 2. == Color::new(0.4, 0.6, 0.8));
+
+        let c1 = Color::new(0.9, 0.6, 0.75);
+        let c2 = Color::new(0.7, 0.1, 0.25);
+        assert!((c1 + c2).equal_approx(Color::new(1.6, 0.7, 1.)));
+        assert!((c1 - c2).equal_approx(Color::new(0.2, 0.5, 0.5)));
+
+        let c1 = Color::new(1., 0.2, 0.4);
+        let c2 = Color::new(0.9, 1., 0.1);
+        assert!((c1 * c2).equal_approx(Color::new(0.9, 0.2, 0.04)));
     }
 }
