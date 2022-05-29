@@ -13,6 +13,12 @@ impl Tuple {
     }
 }
 
+impl From<[f32; 4]> for Tuple {
+    fn from(t: [f32; 4]) -> Self {
+        Self(t)
+    }
+}
+
 impl Deref for Tuple {
     type Target = [f32; 4];
 
