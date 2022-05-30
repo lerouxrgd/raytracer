@@ -83,7 +83,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn canvas_ops() {
+    fn canvas_basics() {
         let mut canvas = Canvas::new(10, 20);
 
         for i in 0..10 {

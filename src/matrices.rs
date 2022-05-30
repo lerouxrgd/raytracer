@@ -1,6 +1,6 @@
-use std::ops::{Deref, Mul};
+use std::ops::{Deref, DerefMut, Mul};
 
-use crate::tuples::Tuple;
+use crate::tuples::{Point, Tuple, Vector};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Matrix<const N: usize, const M: usize>([[f32; M]; N]);
@@ -34,6 +34,12 @@ impl<const N: usize, const M: usize> Deref for Matrix<N, M> {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl<const N: usize, const M: usize> DerefMut for Matrix<N, M> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
@@ -194,6 +200,24 @@ impl From<Tuple> for Matrix<4, 1> {
 impl From<Matrix<4, 1>> for Tuple {
     fn from(m: Matrix<4, 1>) -> Self {
         Tuple::from([m[0][0], m[1][0], m[2][0], m[3][0]])
+    }
+}
+
+impl Mul<Point> for Matrix<4, 4> {
+    type Output = Point;
+
+    fn mul(self, rhs: Point) -> Self::Output {
+        let t = self * Tuple::from(rhs);
+        Point::new(t[0], t[1], t[2])
+    }
+}
+
+impl Mul<Vector> for Matrix<4, 4> {
+    type Output = Vector;
+
+    fn mul(self, rhs: Vector) -> Self::Output {
+        let t = self * Tuple::from(rhs);
+        Vector::new(t[0], t[1], t[2])
     }
 }
 

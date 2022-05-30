@@ -147,6 +147,12 @@ impl Sub<Vector> for Point {
     }
 }
 
+impl From<Point> for Tuple {
+    fn from(p: Point) -> Self {
+        Tuple(p.0 .0)
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -238,6 +244,12 @@ impl Div<f32> for Vector {
     }
 }
 
+impl From<Vector> for Tuple {
+    fn from(v: Vector) -> Self {
+        Tuple(v.0 .0)
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -316,7 +328,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn basic_ops() {
+    fn tuples_basics() {
         let t1 = Tuple([3., -2., 5., 1.]);
         let t2 = Tuple([-2., 3., 1., 0.]);
         assert!(t1 + t2 == Tuple([1., 1., 6., 1.]));
@@ -351,12 +363,16 @@ mod tests {
         assert!(Vector::new(1., 0., 0.).magnitude() == 1.);
         assert!(Vector::new(0., 1., 0.).magnitude() == 1.);
         assert!(Vector::new(0., 0., 1.).magnitude() == 1.);
-        assert!(Vector::new(1., 2., 3.).magnitude() == 14_f32.sqrt());
-        assert!(Vector::new(-1., -2., -3.).magnitude() == 14_f32.sqrt());
+        assert!(Vector::new(1., 2., 3.).magnitude() == f32::sqrt(14.));
+        assert!(Vector::new(-1., -2., -3.).magnitude() == f32::sqrt(14.));
 
         assert!(Vector::new(4., 0., 0.).normalize() == Vector::new(1., 0., 0.));
         let v1 = Vector::new(1., 2., 3.);
-        let v2 = Vector::new(1. / 14_f32.sqrt(), 2. / 14_f32.sqrt(), 3. / 14_f32.sqrt());
+        let v2 = Vector::new(
+            1. / f32::sqrt(14.),
+            2. / f32::sqrt(14.),
+            3. / f32::sqrt(14.),
+        );
         assert!(v1.normalize().equal_approx(v2));
 
         let v1 = Vector::new(1., 2., 3.);
