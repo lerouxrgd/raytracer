@@ -139,6 +139,14 @@ impl Sub for Point {
     }
 }
 
+impl Add<Vector> for Point {
+    type Output = Self;
+
+    fn add(self, rhs: Vector) -> Self::Output {
+        Self(self.0 + rhs.0)
+    }
+}
+
 impl Sub<Vector> for Point {
     type Output = Self;
 
