@@ -1,26 +1,26 @@
 use crate::intersections::Intersection;
+use crate::materials::Material;
 use crate::matrices::Matrix;
 use crate::rays::Ray;
-use crate::tuples::Point;
+use crate::tuples::{Point, Tuple, Vector};
 
 /// A unit sphere centered on the origin
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Sphere {
-    transform: Matrix<4, 4>,
+    pub transform: Matrix<4, 4>,
+    pub material: Material,
 }
 
 impl Sphere {
     pub fn new() -> Self {
         Self {
             transform: Matrix::identity(),
+            material: Material::default(),
         }
     }
 
     pub fn intersect(&self, ray: Ray) -> Option<[Intersection; 2]> {
-        let ray = match self.transform.inverse() {
-            Some(inverse) => ray.transform(inverse),
-            None => return None,
-        };
+        let ray = ray.transform(self.transform.inverse().unwrap());
 
         let sphere_to_ray = ray.origin - Point::new(0., 0., 0.);
         let a = ray.direction.dot(ray.direction);
@@ -40,8 +40,14 @@ impl Sphere {
         }
     }
 
-    pub fn set_transform(&mut self, transform: Matrix<4, 4>) {
-        self.transform = transform;
+    pub fn normal_at(&self, world_point: Point) -> Vector {
+        let inverse = self.transform.inverse().unwrap();
+        let object_point = inverse * world_point;
+        let object_normal = object_point - Point::new(0., 0., 0.);
+        let word_normal = inverse.transpose() * object_normal;
+        let word_normal = Tuple::from(word_normal);
+        let word_normal = Vector::new(word_normal[0], word_normal[1], word_normal[2]);
+        word_normal.normalize()
     }
 }
 
@@ -51,6 +57,7 @@ mod tests {
     use crate::intersections::Intersectable;
     use crate::transformations::*;
     use crate::tuples::Vector;
+    use std::f32::consts::PI;
 
     #[test]
     fn sphere_ray_intersect() {
@@ -91,15 +98,49 @@ mod tests {
 
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
         let mut s = Sphere::new();
-        s.set_transform(scaling(2., 2., 2.));
+        s.transform = scaling(2., 2., 2.);
         let xs = s.intersect(r);
         assert!(xs.unwrap()[0].t() == 3.);
         assert!(xs.unwrap()[1].t() == 7.);
 
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
         let mut s = Sphere::new();
-        s.set_transform(translation(5., 0., 0.));
+        s.transform = translation(5., 0., 0.);
         let xs = s.intersect(r);
         assert!(xs.is_none());
+    }
+
+    #[test]
+    fn sphere_normal() {
+        let s = Sphere::new();
+        assert!(s.normal_at(Point::new(1., 0., 0.)) == Vector::new(1., 0., 0.));
+        assert!(s.normal_at(Point::new(0., 1., 0.)) == Vector::new(0., 1., 0.));
+        assert!(s.normal_at(Point::new(0., 0., 1.)) == Vector::new(0., 0., 1.));
+
+        let s = Sphere::new();
+        let p = Point::new(f32::sqrt(3.) / 3., f32::sqrt(3.) / 3., f32::sqrt(3.) / 3.);
+        let n = Vector::new(f32::sqrt(3.) / 3., f32::sqrt(3.) / 3., f32::sqrt(3.) / 3.);
+        assert!(s.normal_at(p).equal_approx(n));
+        assert!(s.normal_at(p).equal_approx(s.normal_at(p).normalize()));
+
+        let mut s = Sphere::new();
+        s.transform = translation(0., 1., 0.);
+        let n = s.normal_at(Point::new(0., 1.70711, -0.70711));
+        assert!(n.equal_approx(Vector::new(0., 0.70711, -0.70711)));
+
+        let mut s = Sphere::new();
+        s.transform = Transform::new()
+            .roation_z(PI / 5.)
+            .scaling(1., 0.5, 1.)
+            .into();
+        let n = s.normal_at(Point::new(0., f32::sqrt(2.) / 2., -f32::sqrt(2.) / 2.));
+        assert!(n.equal_approx(Vector::new(0., 0.97014, -0.24254)));
+    }
+
+    #[test]
+    fn sphere_material() {
+        let s = Sphere::new();
+        let m = Material::default();
+        assert!(s.material == m);
     }
 }

@@ -5,7 +5,7 @@ pub struct Tuple([f32; 4]);
 
 impl Tuple {
     pub fn equal_approx(&self, other: Self) -> bool {
-        const EPSILON: f32 = 1e-5;
+        const EPSILON: f32 = 1e-4;
         (self.0[0] - other.0[0]).abs() < EPSILON
             && (self.0[1] - other.0[1]).abs() < EPSILON
             && (self.0[2] - other.0[2]).abs() < EPSILON
@@ -187,7 +187,7 @@ impl Vector {
         self.0[3]
     }
 
-    pub fn equal_approx(&self, other: Self) -> bool {
+    pub fn equal_approx(&self, other: Vector) -> bool {
         self.0.equal_approx(other.0)
     }
 
@@ -195,20 +195,24 @@ impl Vector {
         (self.x().powi(2) + self.y().powi(2) + self.z().powi(2) + self.w().powi(2)).sqrt()
     }
 
-    pub fn normalize(&self) -> Self {
-        Self(self.0 / self.magnitude())
+    pub fn normalize(&self) -> Vector {
+        Vector(self.0 / self.magnitude())
     }
 
-    pub fn dot(&self, other: Self) -> f32 {
+    pub fn dot(&self, other: Vector) -> f32 {
         self.x() * other.x() + self.y() * other.y() + self.z() * other.z() + self.w() * other.w()
     }
 
-    pub fn cross(&self, other: Self) -> Self {
-        Self::new(
+    pub fn cross(&self, other: Vector) -> Vector {
+        Vector::new(
             self.y() * other.z() - self.z() * other.y(),
             self.z() * other.x() - self.x() * other.z(),
             self.x() * other.y() - self.y() * other.x(),
         )
+    }
+
+    pub fn reflect(&self, normal: Vector) -> Vector {
+        *self - 2. * self.dot(normal) * normal
     }
 }
 
@@ -266,6 +270,14 @@ pub struct Color(Tuple);
 impl Color {
     pub fn new(r: f32, g: f32, b: f32) -> Self {
         Self(Tuple([r, g, b, 0.]))
+    }
+
+    pub fn white() -> Self {
+        Self::new(1., 1., 1.)
+    }
+
+    pub fn black() -> Self {
+        Self::new(0., 0., 0.)
     }
 
     pub fn r(&self) -> f32 {
@@ -403,5 +415,16 @@ mod tests {
         let c1 = Color::new(1., 0.2, 0.4);
         let c2 = Color::new(0.9, 1., 0.1);
         assert!((c1 * c2).equal_approx(Color::new(0.9, 0.2, 0.04)));
+    }
+
+    #[test]
+    fn vector_reflect() {
+        let v = Vector::new(1., -1., 0.);
+        let n = Vector::new(0., 1., 0.);
+        assert!(v.reflect(n) == Vector::new(1., 1., 0.));
+
+        let v = Vector::new(0., -1., 0.);
+        let n = Vector::new(f32::sqrt(2.) / 2., f32::sqrt(2.) / 2., 0.);
+        assert!(dbg!(v.reflect(n)).equal_approx(Vector::new(1., 0., 0.)));
     }
 }

@@ -5,10 +5,19 @@ use std::ops::Index;
 use ordered_float::OrderedFloat;
 
 use crate::spheres::Sphere;
+use crate::tuples::{Point, Vector};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Intersectable {
     Sphere(Sphere),
+}
+
+impl Intersectable {
+    pub fn normal_at(&self, world_point: Point) -> Vector {
+        match self {
+            Self::Sphere(s) => s.normal_at(world_point),
+        }
+    }
 }
 
 impl From<Sphere> for Intersectable {
