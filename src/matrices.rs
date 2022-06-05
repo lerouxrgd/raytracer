@@ -1,3 +1,6 @@
+#![allow(clippy::flat_map_identity)]
+#![allow(clippy::needless_range_loop)]
+
 use std::ops::{Deref, DerefMut, Mul};
 
 use crate::tuples::{Point, Tuple, Vector};

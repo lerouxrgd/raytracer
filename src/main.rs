@@ -1,45 +1,79 @@
-use raytracer::canvas::Canvas;
+use std::f32::consts::PI;
+
+use raytracer::camera::Camera;
 use raytracer::lights::LightPoint;
-use raytracer::materials::lighting;
-use raytracer::rays::Ray;
 use raytracer::spheres::Sphere;
-use raytracer::tuples::{Color, Point};
+use raytracer::transformations::*;
+use raytracer::tuples::{Color, Point, Vector};
+use raytracer::world::World;
 
 fn main() {
-    let ray_origin = Point::new(0., 0., -5.); // start the ray at z = -5
-    let wall_z = 10.;
-    let wall_size = 7.; // in order to see it completely
-    let canvas_pixels = 100;
-    let pixel_size = wall_size / canvas_pixels as f32;
-    let half = wall_size / 2.;
+    let mut floor = Sphere::new();
+    floor.transform = scaling(10., 0.01, 10.);
+    floor.material.color = Color::new(1., 0.9, 0.9);
+    floor.material.specular = 0.;
 
-    let mut canvas = Canvas::new(canvas_pixels, canvas_pixels);
+    let mut left_wall = Sphere::new();
+    left_wall.transform = Transform::new()
+        .scaling(10., 0.01, 10.)
+        .roation_x(PI / 2.)
+        .roation_y(-PI / 4.)
+        .translation(0., 0., 5.)
+        .into();
+    left_wall.material = floor.material;
 
-    let mut shape = Sphere::new();
-    shape.material.color = Color::new(1., 0.2, 1.);
+    let mut right_wall = Sphere::new();
+    right_wall.transform = Transform::new()
+        .scaling(10., 0.01, 10.)
+        .roation_x(PI / 2.)
+        .roation_y(PI / 4.)
+        .translation(0., 0., 5.)
+        .into();
+    right_wall.material = floor.material;
 
-    let light_position = Point::new(-10., 10., -10.);
-    let light_color = Color::white();
-    let light = LightPoint::new(light_position, light_color);
+    let mut middle = Sphere::new();
+    middle.transform = translation(-0.5, 1., 0.5);
+    middle.material.color = Color::new(0.1, 1., 0.5);
+    middle.material.diffuse = 0.7;
+    middle.material.specular = 0.3;
 
-    for y in 0..canvas_pixels {
-        let world_y = half - pixel_size * y as f32;
-        for x in 0..canvas_pixels {
-            let world_x = -half + pixel_size * x as f32;
-            let position = Point::new(world_x, world_y, wall_z); // on the wall
-            let ray_direction = (position - ray_origin).normalize();
-            let ray = Ray::new(position, ray_direction);
-            let xs = shape.intersect(ray);
-            if let Some(hit) = xs {
-                let hit = hit[0];
-                let point = ray.position(hit.t());
-                let normal = hit.object().normal_at(point);
-                let eye = -ray.direction;
-                let color = lighting(shape.material, light, point, eye, normal);
-                canvas.write_pixel(x, y, color);
-            }
-        }
-    }
+    let mut right = Sphere::new();
+    right.transform = Transform::new()
+        .scaling(0.5, 0.5, 0.5)
+        .translation(1.5, 0.5, -0.5)
+        .into();
+    right.material.color = Color::new(0.5, 1., 0.1);
+    right.material.diffuse = 0.7;
+    right.material.specular = 0.3;
 
+    let mut left = Sphere::new();
+    left.transform = Transform::new()
+        .scaling(0.33, 0.33, 0.33)
+        .translation(-1.5, 0.33, -0.75)
+        .into();
+    left.material.color = Color::new(1., 0.8, 0.1);
+    left.material.diffuse = 0.7;
+    left.material.specular = 0.3;
+
+    let world = World {
+        objects: vec![
+            floor.into(),
+            left_wall.into(),
+            right_wall.into(),
+            middle.into(),
+            right.into(),
+            left.into(),
+        ],
+        light: LightPoint::new(Point::new(-10., 10., -10.), Color::white()),
+    };
+
+    let mut camera = Camera::new(720, 480, PI / 3.);
+    camera.transform = view_transform(
+        Point::new(0., 1.5, -5.),
+        Point::new(0., 1., 0.),
+        Vector::new(0., 1., 0.),
+    );
+
+    let canvas = camera.render(&world);
     canvas.to_ppm(std::io::stdout()); // pipe this to a .ppm file
 }

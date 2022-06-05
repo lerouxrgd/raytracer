@@ -51,10 +51,16 @@ impl Sphere {
     }
 }
 
+impl Default for Sphere {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::intersections::Intersectable;
+    use crate::intersections::Shape;
     use crate::transformations::*;
     use crate::tuples::Vector;
     use std::f32::consts::PI;
@@ -64,8 +70,8 @@ mod tests {
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
         let s = Sphere::new();
         let xs = s.intersect(r);
-        assert!(xs.unwrap()[0].object() == Intersectable::Sphere(s));
-        assert!(xs.unwrap()[1].object() == Intersectable::Sphere(s));
+        assert!(xs.unwrap()[0].object() == Shape::Sphere(s));
+        assert!(xs.unwrap()[1].object() == Shape::Sphere(s));
 
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
         let s = Sphere::new();

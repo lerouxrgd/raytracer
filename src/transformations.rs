@@ -95,6 +95,12 @@ impl Transform {
     }
 }
 
+impl Default for Transform {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl From<Transform> for Matrix<4, 4> {
     fn from(t: Transform) -> Self {
         t.0
@@ -115,6 +121,20 @@ impl Mul<Vector> for Transform {
     fn mul(self, rhs: Vector) -> Self::Output {
         self.0 * rhs
     }
+}
+
+pub fn view_transform(from: Point, to: Point, up: Vector) -> Matrix<4, 4> {
+    let forward = (to - from).normalize();
+    let upn = up.normalize();
+    let left = forward.cross(upn);
+    let true_up = left.cross(forward);
+    let orientation = Matrix::<4, 4>::new([
+        [left.x(), left.y(), left.z(), 0.],
+        [true_up.x(), true_up.y(), true_up.z(), 0.],
+        [-forward.x(), -forward.y(), -forward.z(), 0.],
+        [0., 0., 0., 1.],
+    ]);
+    orientation * translation(-from.x(), -from.y(), -from.z())
 }
 
 #[cfg(test)]
@@ -211,5 +231,38 @@ mod tests {
             .scaling(5., 5., 5.)
             .translation(10., 5., 7.);
         assert!((t * p).equal_approx(Point::new(15., 0., 7.)));
+    }
+
+    #[test]
+    fn view_transformations() {
+        let from = Point::new(0., 0., 0.);
+        let to = Point::new(0., 0., -1.);
+        let up = Vector::new(0., 1., 0.);
+        let t = view_transform(from, to, up);
+        assert!(t == Matrix::identity());
+
+        let from = Point::new(0., 0., 0.);
+        let to = Point::new(0., 0., 1.);
+        let up = Vector::new(0., 1., 0.);
+        let t = view_transform(from, to, up);
+        assert!(t == scaling(-1., 1., -1.));
+
+        let from = Point::new(0., 0., 8.);
+        let to = Point::new(0., 0., 0.);
+        let up = Vector::new(0., 1., 0.);
+        let t = view_transform(from, to, up);
+        assert!(t == translation(0., 0., -8.));
+
+        let from = Point::new(1., 3., 2.);
+        let to = Point::new(4., -2., 8.);
+        let up = Vector::new(1., 1., 0.);
+        let t = view_transform(from, to, up);
+        let exepected = Matrix::<4, 4>::new([
+            [-0.50709, 0.50709, 0.67612, -2.36643],
+            [0.76772, 0.60609, 0.12122, -2.82843],
+            [-0.35857, 0.59761, -0.71714, 0.],
+            [0., 0., 0., 1.],
+        ]);
+        assert!(t.equal_approx(exepected));
     }
 }
