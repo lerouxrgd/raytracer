@@ -67,7 +67,7 @@ fn main() {
         light: LightPoint::new(Point::new(-10., 10., -10.), Color::white()),
     };
 
-    let mut camera = Camera::new(720, 480, PI / 3.);
+    let mut camera = Camera::new(1280, 720, PI / 3.);
     camera.transform = view_transform(
         Point::new(0., 1.5, -5.),
         Point::new(0., 1., 0.),

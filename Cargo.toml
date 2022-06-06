@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 image = { version = "0.24", default-features = false, features = ["pnm"]}
 ordered-float = "3"
+rayon = "1"

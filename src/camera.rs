@@ -59,14 +59,22 @@ impl Camera {
     }
 
     pub fn render(&self, world: &World) -> Canvas {
+        use rayon::prelude::*;
         let mut canvas = Canvas::new(self.hsize, self.vsize);
-        for px in 0..self.hsize {
-            for py in 0..self.vsize {
+        (0..self.hsize)
+            .flat_map(move |px| (0..self.vsize).map(move |py| (px, py)))
+            .collect::<Vec<_>>()
+            .into_par_iter()
+            .map(|(px, py)| {
                 let ray = self.ray_for_pixel(px, py);
                 let color = world.color_at(ray);
+                (px, py, color)
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .for_each(|(px, py, color)| {
                 canvas.write_pixel(px, py, color);
-            }
-        }
+            });
         canvas
     }
 }
