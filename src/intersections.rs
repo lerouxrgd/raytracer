@@ -115,12 +115,15 @@ pub struct Computations {
     pub t: f32,
     pub object: Shape,
     pub point: Point,
+    pub over_point: Point,
     pub eyev: Vector,
     pub normalv: Vector,
     pub inside: bool,
 }
 
 impl Computations {
+    pub const EPSILON: f32 = 1e-2;
+
     pub fn prepare(intersection: Intersection, ray: Ray) -> Self {
         let world_point = ray.position(intersection.t());
 
@@ -137,10 +140,13 @@ impl Computations {
             false
         };
 
+        let over_point = point + Self::EPSILON * normalv;
+
         Self {
             t,
             object,
             point,
+            over_point,
             eyev,
             normalv,
             inside,
@@ -151,6 +157,7 @@ impl Computations {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::transformations::*;
 
     #[test]
     fn intersections_sphere() {
@@ -212,5 +219,16 @@ mod tests {
         assert!(comps.eyev == Vector::new(0., 0., -1.));
         assert!(comps.normalv == Vector::new(0., 0., -1.));
         assert!(comps.inside == true);
+    }
+
+    #[test]
+    fn intersection_offset() {
+        let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
+        let mut s = Sphere::new();
+        s.transform = translation(0., 0., 1.);
+        let i = Intersection::new(5., s.into());
+        let comps = Computations::prepare(i, r);
+        assert!(comps.over_point.z() < -Computations::EPSILON / 2.);
+        assert!(comps.point.z() > comps.over_point.z());
     }
 }

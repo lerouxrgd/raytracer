@@ -28,6 +28,7 @@ pub fn lighting(
     point: Point,
     eyev: Vector,
     normalv: Vector,
+    in_shadow: bool,
 ) -> Color {
     // Combine the surface color with the light's color/intensity
     let effective_color = material.color * light.intensity;
@@ -64,7 +65,11 @@ pub fn lighting(
         (diffuse, specular)
     };
 
-    ambient + diffuse + specular
+    if in_shadow {
+        ambient
+    } else {
+        ambient + diffuse + specular
+    }
 }
 
 #[cfg(test)]
@@ -79,31 +84,37 @@ mod tests {
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
         let light = LightPoint::new(Point::new(0., 0., -10.), Color::white());
-        let res = lighting(m, light, pos, eyev, normalv);
+        let res = lighting(m, light, pos, eyev, normalv, false);
         assert!(res == Color::new(1.9, 1.9, 1.9));
 
         let eyev = Vector::new(0., f32::sqrt(2.) / 2., -f32::sqrt(2.) / 2.);
         let normalv = Vector::new(0., 0., -1.);
         let light = LightPoint::new(Point::new(0., 0., -10.), Color::white());
-        let res = lighting(m, light, pos, eyev, normalv);
+        let res = lighting(m, light, pos, eyev, normalv, false);
         assert!(res == Color::white());
 
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
         let light = LightPoint::new(Point::new(0., 10., -10.), Color::white());
-        let res = lighting(m, light, pos, eyev, normalv);
+        let res = lighting(m, light, pos, eyev, normalv, false);
         assert!(res.equal_approx(Color::new(0.7364, 0.7364, 0.7364)));
 
         let eyev = Vector::new(0., -f32::sqrt(2.) / 2., -f32::sqrt(2.) / 2.);
         let normalv = Vector::new(0., 0., -1.);
         let light = LightPoint::new(Point::new(0., 10., -10.), Color::white());
-        let res = lighting(m, light, pos, eyev, normalv);
+        let res = lighting(m, light, pos, eyev, normalv, false);
         assert!(res.equal_approx(Color::new(1.6364, 1.6364, 1.6364)));
 
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
         let light = LightPoint::new(Point::new(0., 0., 10.), Color::white());
-        let res = lighting(m, light, pos, eyev, normalv);
+        let res = lighting(m, light, pos, eyev, normalv, false);
+        assert!(res == Color::new(0.1, 0.1, 0.1));
+
+        let eyev = Vector::new(0., 0., -1.);
+        let normalv = Vector::new(0., 0., -1.);
+        let light = LightPoint::new(Point::new(0., 0., -10.), Color::white());
+        let res = lighting(m, light, pos, eyev, normalv, true);
         assert!(res == Color::new(0.1, 0.1, 0.1));
     }
 }
