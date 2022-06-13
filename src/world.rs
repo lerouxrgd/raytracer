@@ -1,10 +1,10 @@
 use std::ops::{Index, IndexMut};
 
-use crate::intersections::{Computations, Intersections, Shape};
+use crate::intersections::{Computations, Intersections};
 use crate::lights::LightPoint;
 use crate::materials::lighting;
 use crate::rays::Ray;
-use crate::spheres::Sphere;
+use crate::shapes::{Shape, Sphere};
 use crate::transformations::scaling;
 use crate::tuples::{Color, Point};
 
@@ -35,17 +35,13 @@ impl Default for World {
 
 impl World {
     pub fn intersect(&self, ray: Ray) -> Intersections {
-        let mut intersections = vec![];
-        for object in self.objects.iter() {
-            match object {
-                Shape::Sphere(s) => {
-                    if let Some(xs) = s.intersect(ray) {
-                        intersections.extend(xs)
-                    }
-                }
-            }
-        }
-        intersections.into()
+        self.objects
+            .iter()
+            .fold(vec![], |mut xs, shape| {
+                shape.intersect(&mut xs, ray);
+                xs
+            })
+            .into()
     }
 
     pub fn shade_hit(&self, comps: Computations) -> Color {

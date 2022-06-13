@@ -2,34 +2,23 @@ use std::f32::consts::PI;
 
 use raytracer::camera::Camera;
 use raytracer::lights::LightPoint;
-use raytracer::spheres::Sphere;
+use raytracer::shapes::{Plane, Sphere};
 use raytracer::transformations::*;
 use raytracer::tuples::{Color, Point, Vector};
 use raytracer::world::World;
 
 fn main() {
-    let mut floor = Sphere::new();
-    floor.transform = scaling(10., 0.01, 10.);
+    let mut floor = Plane::new();
     floor.material.color = Color::new(1., 0.9, 0.9);
     floor.material.specular = 0.;
 
-    let mut left_wall = Sphere::new();
-    left_wall.transform = Transform::new()
-        .scaling(10., 0.01, 10.)
-        .roation_x(PI / 2.)
-        .roation_y(-PI / 4.)
+    let mut backdrop = Plane::new();
+    backdrop.transform = Transform::new()
+        .rotation_x(PI / 2.)
         .translation(0., 0., 5.)
         .into();
-    left_wall.material = floor.material;
-
-    let mut right_wall = Sphere::new();
-    right_wall.transform = Transform::new()
-        .scaling(10., 0.01, 10.)
-        .roation_x(PI / 2.)
-        .roation_y(PI / 4.)
-        .translation(0., 0., 5.)
-        .into();
-    right_wall.material = floor.material;
+    backdrop.material.color = Color::new(1., 0.9, 0.9);
+    backdrop.material.specular = 0.;
 
     let mut middle = Sphere::new();
     middle.transform = translation(-0.5, 1., 0.5);
@@ -58,8 +47,7 @@ fn main() {
     let world = World {
         objects: vec![
             floor.into(),
-            left_wall.into(),
-            right_wall.into(),
+            backdrop.into(),
             middle.into(),
             right.into(),
             left.into(),

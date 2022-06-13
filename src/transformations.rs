@@ -19,7 +19,7 @@ pub fn scaling(x: f32, y: f32, z: f32) -> Matrix<4, 4> {
     transform
 }
 
-pub fn roation_x(angle: f32) -> Matrix<4, 4> {
+pub fn rotation_x(angle: f32) -> Matrix<4, 4> {
     let mut transform = Matrix::identity();
     transform[1][1] = angle.cos();
     transform[1][2] = -angle.sin();
@@ -74,8 +74,8 @@ impl Transform {
         self
     }
 
-    pub fn roation_x(mut self, angle: f32) -> Self {
-        self.0 = roation_x(angle) * self.0;
+    pub fn rotation_x(mut self, angle: f32) -> Self {
+        self.0 = rotation_x(angle) * self.0;
         self
     }
 
@@ -169,8 +169,8 @@ mod tests {
     #[test]
     fn rotations_basics() {
         let p = Point::new(0., 1., 0.);
-        let r1 = roation_x(PI / 4.);
-        let r2 = roation_x(PI / 2.);
+        let r1 = rotation_x(PI / 4.);
+        let r2 = rotation_x(PI / 2.);
         assert!((r1 * p).equal_approx(Point::new(0., f32::sqrt(2.) / 2., f32::sqrt(2.) / 2.)));
         assert!((r2 * p).equal_approx(Point::new(0., 0., 1.)));
         assert!((r1.inverse().unwrap() * p).equal_approx(Point::new(
@@ -214,7 +214,7 @@ mod tests {
 
     #[test]
     fn transformations_chaining() {
-        let t1 = roation_x(PI / 2.);
+        let t1 = rotation_x(PI / 2.);
         let t2 = scaling(5., 5., 5.);
         let t3 = translation(10., 5., 7.);
         let p1 = Point::new(1., 0., 1.);
@@ -227,7 +227,7 @@ mod tests {
 
         let p = Point::new(1., 0., 1.);
         let t = Transform::new()
-            .roation_x(PI / 2.)
+            .rotation_x(PI / 2.)
             .scaling(5., 5., 5.)
             .translation(10., 5., 7.);
         assert!((t * p).equal_approx(Point::new(15., 0., 7.)));

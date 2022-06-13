@@ -425,6 +425,6 @@ mod tests {
 
         let v = Vector::new(0., -1., 0.);
         let n = Vector::new(f32::sqrt(2.) / 2., f32::sqrt(2.) / 2., 0.);
-        assert!(dbg!(v.reflect(n)).equal_approx(Vector::new(1., 0., 0.)));
+        assert!(v.reflect(n).equal_approx(Vector::new(1., 0., 0.)));
     }
 }

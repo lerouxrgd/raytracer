@@ -4,47 +4,9 @@ use std::ops::Index;
 
 use ordered_float::OrderedFloat;
 
-use crate::materials::Material;
 use crate::rays::Ray;
-use crate::spheres::Sphere;
+use crate::shapes::Shape;
 use crate::tuples::{Point, Vector};
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Shape {
-    Sphere(Sphere),
-}
-
-impl Shape {
-    pub fn normal_at(&self, world_point: Point) -> Vector {
-        match self {
-            Self::Sphere(s) => s.normal_at(world_point),
-        }
-    }
-
-    pub fn material(&self) -> Material {
-        match self {
-            Self::Sphere(s) => s.material,
-        }
-    }
-
-    pub fn material_mut(&mut self) -> &mut Material {
-        match self {
-            Self::Sphere(s) => &mut s.material,
-        }
-    }
-}
-
-impl From<Sphere> for Shape {
-    fn from(s: Sphere) -> Self {
-        Self::Sphere(s)
-    }
-}
-
-impl From<&Sphere> for Shape {
-    fn from(s: &Sphere) -> Self {
-        Self::Sphere(*s)
-    }
-}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Intersection {
@@ -157,6 +119,7 @@ impl Computations {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::shapes::*;
     use crate::transformations::*;
 
     #[test]
