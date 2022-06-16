@@ -1,8 +1,11 @@
 use crate::lights::LightPoint;
+use crate::patterns::Pattern;
+use crate::shapes::Shape;
 use crate::tuples::{Color, Point, Vector};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Material {
+    pub pattern: Option<Pattern>,
     pub color: Color,
     pub ambient: f32,
     pub diffuse: f32,
@@ -13,6 +16,7 @@ pub struct Material {
 impl Default for Material {
     fn default() -> Self {
         Material {
+            pattern: None,
             color: Color::white(),
             ambient: 0.1,
             diffuse: 0.9,
@@ -24,14 +28,20 @@ impl Default for Material {
 
 pub fn lighting(
     material: Material,
+    shape: Shape,
     light: LightPoint,
     point: Point,
     eyev: Vector,
     normalv: Vector,
     in_shadow: bool,
 ) -> Color {
+    let color = match material.pattern {
+        Some(pattern) => pattern.pattern_at_shape(shape, point),
+        None => material.color,
+    };
+
     // Combine the surface color with the light's color/intensity
-    let effective_color = material.color * light.intensity;
+    let effective_color = color * light.intensity;
 
     // Compute the ambient contribution
     let ambient = effective_color * material.ambient;
@@ -74,47 +84,68 @@ pub fn lighting(
 
 #[cfg(test)]
 mod tests {
+    use crate::patterns::Striped;
+    use crate::shapes::{Shape, Sphere};
+
     use super::*;
 
     #[test]
     fn lighting_basics() {
         let m = Material::default();
+        let s = Shape::Sphere(Sphere::new());
         let pos = Point::new(0., 0., 0.);
 
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
         let light = LightPoint::new(Point::new(0., 0., -10.), Color::white());
-        let res = lighting(m, light, pos, eyev, normalv, false);
+        let res = lighting(m, s, light, pos, eyev, normalv, false);
         assert!(res == Color::new(1.9, 1.9, 1.9));
 
         let eyev = Vector::new(0., f32::sqrt(2.) / 2., -f32::sqrt(2.) / 2.);
         let normalv = Vector::new(0., 0., -1.);
         let light = LightPoint::new(Point::new(0., 0., -10.), Color::white());
-        let res = lighting(m, light, pos, eyev, normalv, false);
+        let res = lighting(m, s, light, pos, eyev, normalv, false);
         assert!(res == Color::white());
 
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
         let light = LightPoint::new(Point::new(0., 10., -10.), Color::white());
-        let res = lighting(m, light, pos, eyev, normalv, false);
+        let res = lighting(m, s, light, pos, eyev, normalv, false);
         assert!(res.equal_approx(Color::new(0.7364, 0.7364, 0.7364)));
 
         let eyev = Vector::new(0., -f32::sqrt(2.) / 2., -f32::sqrt(2.) / 2.);
         let normalv = Vector::new(0., 0., -1.);
         let light = LightPoint::new(Point::new(0., 10., -10.), Color::white());
-        let res = lighting(m, light, pos, eyev, normalv, false);
+        let res = lighting(m, s, light, pos, eyev, normalv, false);
         assert!(res.equal_approx(Color::new(1.6364, 1.6364, 1.6364)));
 
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
         let light = LightPoint::new(Point::new(0., 0., 10.), Color::white());
-        let res = lighting(m, light, pos, eyev, normalv, false);
+        let res = lighting(m, s, light, pos, eyev, normalv, false);
         assert!(res == Color::new(0.1, 0.1, 0.1));
 
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
         let light = LightPoint::new(Point::new(0., 0., -10.), Color::white());
-        let res = lighting(m, light, pos, eyev, normalv, true);
+        let res = lighting(m, s, light, pos, eyev, normalv, true);
         assert!(res == Color::new(0.1, 0.1, 0.1));
+    }
+
+    #[test]
+    fn lighting_patterns() {
+        let s = Shape::Sphere(Sphere::new());
+        let mut m = Material::default();
+        m.pattern = Striped::new(Color::white(), Color::black()).into();
+        m.ambient = 1.;
+        m.diffuse = 0.;
+        m.specular = 0.;
+        let eyev = Vector::new(0., 0., -1.);
+        let normalv = Vector::new(0., 0., -1.);
+        let light = LightPoint::new(Point::new(0., 0., -10.), Color::white());
+        let c1 = lighting(m, s, light, Point::new(0.9, 0., 0.), eyev, normalv, false);
+        let c2 = lighting(m, s, light, Point::new(1.1, 0., 0.), eyev, normalv, false);
+        assert!(c1 == Color::white());
+        assert!(c2 == Color::black());
     }
 }

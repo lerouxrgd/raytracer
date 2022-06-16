@@ -2,6 +2,7 @@ use std::f32::consts::PI;
 
 use raytracer::camera::Camera;
 use raytracer::lights::LightPoint;
+use raytracer::patterns::*;
 use raytracer::shapes::{Plane, Sphere};
 use raytracer::transformations::*;
 use raytracer::tuples::{Color, Point, Vector};
@@ -9,6 +10,12 @@ use raytracer::world::World;
 
 fn main() {
     let mut floor = Plane::new();
+    let mut pattern = Checker::new(Color::white(), Color::black());
+    pattern.transform = Transform::new()
+        .roation_y(PI / 4.)
+        .scaling(0.4, 0.4, 0.4)
+        .into();
+    floor.material.pattern = pattern.into();
     floor.material.color = Color::new(1., 0.9, 0.9);
     floor.material.specular = 0.;
 

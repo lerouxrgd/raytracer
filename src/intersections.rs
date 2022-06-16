@@ -84,7 +84,7 @@ pub struct Computations {
 }
 
 impl Computations {
-    pub const EPSILON: f32 = 1e-2;
+    pub const EPSILON: f32 = 1e-4;
 
     pub fn prepare(intersection: Intersection, ray: Ray) -> Self {
         let world_point = ray.position(intersection.t());

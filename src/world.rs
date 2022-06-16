@@ -48,8 +48,9 @@ impl World {
         let shadowed = self.is_shadowed(comps.over_point);
         lighting(
             comps.object.material(),
+            comps.object,
             self.light,
-            comps.point,
+            comps.over_point,
             comps.eyev,
             comps.normalv,
             shadowed,
