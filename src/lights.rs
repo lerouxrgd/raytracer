@@ -1,12 +1,12 @@
 use crate::tuples::{Color, Point};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct LightPoint {
+pub struct PointLight {
     pub intensity: Color,
     pub position: Point,
 }
 
-impl LightPoint {
+impl PointLight {
     pub fn new(position: Point, intensity: Color) -> Self {
         Self {
             intensity,

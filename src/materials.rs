@@ -1,4 +1,4 @@
-use crate::lights::LightPoint;
+use crate::lights::PointLight;
 use crate::patterns::Pattern;
 use crate::shapes::Shape;
 use crate::tuples::{Color, Point, Vector};
@@ -11,6 +11,9 @@ pub struct Material {
     pub diffuse: f32,
     pub specular: f32,
     pub shininess: f32,
+    pub reflective: f32,
+    pub transparency: f32,
+    pub refractive_index: f32,
 }
 
 impl Default for Material {
@@ -22,6 +25,9 @@ impl Default for Material {
             diffuse: 0.9,
             specular: 0.9,
             shininess: 200.,
+            reflective: 0.,
+            transparency: 0.,
+            refractive_index: 1.,
         }
     }
 }
@@ -29,7 +35,7 @@ impl Default for Material {
 pub fn lighting(
     material: Material,
     shape: Shape,
-    light: LightPoint,
+    light: PointLight,
     point: Point,
     eyev: Vector,
     normalv: Vector,
@@ -97,37 +103,37 @@ mod tests {
 
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
-        let light = LightPoint::new(Point::new(0., 0., -10.), Color::white());
+        let light = PointLight::new(Point::new(0., 0., -10.), Color::white());
         let res = lighting(m, s, light, pos, eyev, normalv, false);
         assert!(res == Color::new(1.9, 1.9, 1.9));
 
         let eyev = Vector::new(0., f32::sqrt(2.) / 2., -f32::sqrt(2.) / 2.);
         let normalv = Vector::new(0., 0., -1.);
-        let light = LightPoint::new(Point::new(0., 0., -10.), Color::white());
+        let light = PointLight::new(Point::new(0., 0., -10.), Color::white());
         let res = lighting(m, s, light, pos, eyev, normalv, false);
         assert!(res == Color::white());
 
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
-        let light = LightPoint::new(Point::new(0., 10., -10.), Color::white());
+        let light = PointLight::new(Point::new(0., 10., -10.), Color::white());
         let res = lighting(m, s, light, pos, eyev, normalv, false);
         assert!(res.equal_approx(Color::new(0.7364, 0.7364, 0.7364)));
 
         let eyev = Vector::new(0., -f32::sqrt(2.) / 2., -f32::sqrt(2.) / 2.);
         let normalv = Vector::new(0., 0., -1.);
-        let light = LightPoint::new(Point::new(0., 10., -10.), Color::white());
+        let light = PointLight::new(Point::new(0., 10., -10.), Color::white());
         let res = lighting(m, s, light, pos, eyev, normalv, false);
         assert!(res.equal_approx(Color::new(1.6364, 1.6364, 1.6364)));
 
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
-        let light = LightPoint::new(Point::new(0., 0., 10.), Color::white());
+        let light = PointLight::new(Point::new(0., 0., 10.), Color::white());
         let res = lighting(m, s, light, pos, eyev, normalv, false);
         assert!(res == Color::new(0.1, 0.1, 0.1));
 
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
-        let light = LightPoint::new(Point::new(0., 0., -10.), Color::white());
+        let light = PointLight::new(Point::new(0., 0., -10.), Color::white());
         let res = lighting(m, s, light, pos, eyev, normalv, true);
         assert!(res == Color::new(0.1, 0.1, 0.1));
     }
@@ -142,7 +148,7 @@ mod tests {
         m.specular = 0.;
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
-        let light = LightPoint::new(Point::new(0., 0., -10.), Color::white());
+        let light = PointLight::new(Point::new(0., 0., -10.), Color::white());
         let c1 = lighting(m, s, light, Point::new(0.9, 0., 0.), eyev, normalv, false);
         let c2 = lighting(m, s, light, Point::new(1.1, 0., 0.), eyev, normalv, false);
         assert!(c1 == Color::white());

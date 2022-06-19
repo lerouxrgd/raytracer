@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use raytracer::camera::Camera;
-use raytracer::lights::LightPoint;
+use raytracer::lights::PointLight;
 use raytracer::patterns::*;
 use raytracer::shapes::{Plane, Sphere};
 use raytracer::transformations::*;
@@ -18,6 +18,7 @@ fn main() {
     floor.material.pattern = pattern.into();
     floor.material.color = Color::new(1., 0.9, 0.9);
     floor.material.specular = 0.;
+    floor.material.reflective = 0.3;
 
     let mut backdrop = Plane::new();
     backdrop.transform = Transform::new()
@@ -29,9 +30,10 @@ fn main() {
 
     let mut middle = Sphere::new();
     middle.transform = translation(-0.5, 1., 0.5);
-    middle.material.color = Color::new(0.1, 1., 0.5);
+    middle.material.color = Color::new(0.1, 0.4, 0.9);
     middle.material.diffuse = 0.7;
     middle.material.specular = 0.3;
+    middle.material.reflective = 0.8;
 
     let mut right = Sphere::new();
     right.transform = Transform::new()
@@ -59,7 +61,7 @@ fn main() {
             right.into(),
             left.into(),
         ],
-        light: LightPoint::new(Point::new(-10., 10., -10.), Color::white()),
+        light: PointLight::new(Point::new(-10., 10., -10.), Color::white()),
     };
 
     let mut camera = Camera::new(1280, 720, PI / 3.);

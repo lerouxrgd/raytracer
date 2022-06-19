@@ -8,6 +8,7 @@ pub enum Pattern {
     Gradient(Gradient),
     Ring(Ring),
     Checker(Checker),
+    XyzRgb(XyzRgb),
 }
 
 impl Pattern {
@@ -16,7 +17,8 @@ impl Pattern {
             &Self::Striped(Striped { transform, .. })
             | &Self::Gradient(Gradient { transform, .. })
             | &Self::Ring(Ring { transform, .. })
-            | &Self::Checker(Checker { transform, .. }) => transform,
+            | &Self::Checker(Checker { transform, .. })
+            | &Self::XyzRgb(XyzRgb { transform, .. }) => transform,
         }
     }
 
@@ -33,6 +35,9 @@ impl Pattern {
             })
             | Self::Checker(Checker {
                 ref mut transform, ..
+            })
+            | Self::XyzRgb(XyzRgb {
+                ref mut transform, ..
             }) => transform,
         }
     }
@@ -45,6 +50,7 @@ impl Pattern {
             Self::Gradient(g) => g.pattern_at(pattern_point),
             Self::Ring(r) => r.pattern_at(pattern_point),
             Self::Checker(c) => c.pattern_at(pattern_point),
+            Self::XyzRgb(xyz) => xyz.pattern_at(pattern_point),
         }
     }
 }
@@ -166,7 +172,7 @@ impl From<Ring> for Option<Pattern> {
     }
 }
 
-///
+/// Repeating pattern of squares (adjacent squares have different colors)
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Checker {
     pub a: Color,
@@ -203,6 +209,36 @@ impl From<Checker> for Pattern {
 impl From<Checker> for Option<Pattern> {
     fn from(s: Checker) -> Self {
         Some(Pattern::Checker(s))
+    }
+}
+
+/// Coordinates are the color components
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct XyzRgb {
+    pub transform: Matrix<4, 4>,
+}
+
+impl XyzRgb {
+    pub fn new() -> Self {
+        Self {
+            transform: Matrix::identity(),
+        }
+    }
+
+    pub fn pattern_at(&self, pattern_point: Point) -> Color {
+        Color::new(pattern_point.x(), pattern_point.y(), pattern_point.z())
+    }
+}
+
+impl From<XyzRgb> for Pattern {
+    fn from(xyz: XyzRgb) -> Self {
+        Pattern::XyzRgb(xyz)
+    }
+}
+
+impl From<XyzRgb> for Option<Pattern> {
+    fn from(xyz: XyzRgb) -> Self {
+        Some(Pattern::XyzRgb(xyz))
     }
 }
 

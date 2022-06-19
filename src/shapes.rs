@@ -276,13 +276,6 @@ mod tests {
     }
 
     #[test]
-    fn sphere_material() {
-        let s = Sphere::new();
-        let m = Material::default();
-        assert!(s.material == m);
-    }
-
-    #[test]
     fn plane_basics() {
         let p = Plane::new();
         assert!(p.local_normal_at(Point::new(0., 0., 0.)) == Vector::new(0., 1., 0.));

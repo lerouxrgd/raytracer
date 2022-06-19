@@ -7,3 +7,6 @@ edition = "2021"
 image = { version = "0.24", default-features = false, features = ["pnm"]}
 ordered-float = "3"
 rayon = "1"
+
+# [profile.release]
+# lto = true
