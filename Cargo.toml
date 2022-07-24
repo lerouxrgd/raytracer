@@ -4,9 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+derivative = "2"
 image = { version = "0.24", default-features = false, features = ["pnm"]}
+lazy_static = "1"
 ordered-float = "3"
 rayon = "1"
+slotmap = "1"
 
 # [profile.release]
 # lto = true

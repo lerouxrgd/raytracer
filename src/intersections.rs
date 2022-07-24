@@ -54,6 +54,12 @@ impl From<Vec<Intersection>> for Intersections {
     }
 }
 
+impl From<Intersections> for Vec<Intersection> {
+    fn from(xs: Intersections) -> Self {
+        xs.0.into_keys().collect()
+    }
+}
+
 impl Index<usize> for Intersections {
     type Output = Intersection;
 
@@ -308,8 +314,8 @@ mod tests {
         ];
         for (i, n1, n2) in cases.into_iter() {
             let comps = Computations::prepare(xs[i], r, &xs);
-            assert!(dbg!(comps.n1) == n1);
-            assert!(dbg!(comps.n2) == n2);
+            assert!(comps.n1 == n1);
+            assert!(comps.n2 == n2);
         }
     }
 

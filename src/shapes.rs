@@ -1,7 +1,10 @@
 use std::mem;
 
+use derivative::Derivative;
 use ordered_float::OrderedFloat;
+use slotmap::Key;
 
+use crate::groups::Group;
 use crate::intersections::Intersection;
 use crate::materials::Material;
 use crate::matrices::Matrix;
@@ -79,8 +82,7 @@ impl Shape {
     }
 
     pub fn normal_at(&self, world_point: Point) -> Vector {
-        let inverse = self.transform().inverse().unwrap();
-        let local_point = inverse * world_point;
+        let local_point = self.world_to_object(world_point);
         let local_normal = match self {
             Self::Sphere(s) => s.local_normal_at(local_point),
             Self::Plane(p) => p.local_normal_at(local_point),
@@ -88,9 +90,7 @@ impl Shape {
             Self::Cone(c) => c.local_normal_at(local_point),
             Self::Cube(c) => c.local_normal_at(local_point),
         };
-        let world_normal = Tuple::from(inverse.transpose() * local_normal);
-        let world_normal = Vector::new(world_normal[0], world_normal[1], world_normal[2]);
-        world_normal.normalize()
+        self.normal_to_world(local_normal)
     }
 
     pub fn intersect(&self, intersections: &mut Vec<Intersection>, world_ray: Ray) {
@@ -124,6 +124,48 @@ impl Shape {
                     intersections.extend(xs)
                 }
             }
+        }
+    }
+
+    pub fn parent(&self) -> Group {
+        match self {
+            &Self::Sphere(Sphere { parent, .. })
+            | &Self::Plane(Plane { parent, .. })
+            | &Self::Cylinder(Cylinder { parent, .. })
+            | &Self::Cone(Cone { parent, .. })
+            | &Self::Cube(Cube { parent, .. }) => parent,
+        }
+    }
+
+    pub(crate) fn parent_mut(&mut self) -> &mut Group {
+        match self {
+            Self::Sphere(Sphere { ref mut parent, .. })
+            | Self::Plane(Plane { ref mut parent, .. })
+            | Self::Cylinder(Cylinder { ref mut parent, .. })
+            | Self::Cone(Cone { ref mut parent, .. })
+            | Self::Cube(Cube { ref mut parent, .. }) => parent,
+        }
+    }
+
+    pub fn world_to_object(&self, point: Point) -> Point {
+        let point = if !self.parent().is_null() {
+            self.parent().world_to_object(point)
+        } else {
+            point
+        };
+        self.transform().inverse().unwrap() * point
+    }
+
+    pub fn normal_to_world(&self, normal: Vector) -> Vector {
+        let inverse = self.transform().inverse().unwrap();
+        let normal = Tuple::from(inverse.transpose() * normal);
+        let normal = Vector::new(normal[0], normal[1], normal[2]);
+        let normal = normal.normalize();
+
+        if !self.parent().is_null() {
+            self.parent().normal_to_world(normal)
+        } else {
+            normal
         }
     }
 }
@@ -189,10 +231,13 @@ impl From<&Cone> for Shape {
 }
 
 /// A unit sphere centered on the origin
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, Derivative)]
+#[derivative(PartialEq)]
 pub struct Sphere {
     pub transform: Matrix<4, 4>,
     pub material: Material,
+    #[derivative(PartialEq = "ignore")]
+    parent: Group,
 }
 
 impl Sphere {
@@ -200,6 +245,7 @@ impl Sphere {
         Self {
             transform: Matrix::identity(),
             material: Material::default(),
+            parent: Group::null(),
         }
     }
 
@@ -233,10 +279,13 @@ impl Default for Sphere {
 }
 
 /// A xz plane (left-handed coordinates)
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, Derivative)]
+#[derivative(PartialEq)]
 pub struct Plane {
     pub transform: Matrix<4, 4>,
     pub material: Material,
+    #[derivative(PartialEq = "ignore")]
+    parent: Group,
 }
 
 impl Plane {
@@ -246,6 +295,7 @@ impl Plane {
         Self {
             transform: Matrix::identity(),
             material: Material::default(),
+            parent: Group::null(),
         }
     }
 
@@ -270,10 +320,13 @@ impl Default for Plane {
 }
 
 /// An axis-aligned bounding box (AABB) centered on the origin
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, Derivative)]
+#[derivative(PartialEq)]
 pub struct Cube {
     pub transform: Matrix<4, 4>,
     pub material: Material,
+    #[derivative(PartialEq = "ignore")]
+    parent: Group,
 }
 
 impl Cube {
@@ -283,6 +336,7 @@ impl Cube {
         Self {
             transform: Matrix::identity(),
             material: Material::default(),
+            parent: Group::null(),
         }
     }
 
@@ -358,13 +412,16 @@ impl Default for Cube {
 }
 
 /// Infinite cynlinder of radius 1 along the y axis
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, Derivative)]
+#[derivative(PartialEq)]
 pub struct Cylinder {
     pub transform: Matrix<4, 4>,
     pub material: Material,
     pub min: f32,
     pub max: f32,
     pub closed: bool,
+    #[derivative(PartialEq = "ignore")]
+    parent: Group,
 }
 
 impl Cylinder {
@@ -377,6 +434,7 @@ impl Cylinder {
             min: f32::NEG_INFINITY,
             max: f32::INFINITY,
             closed: false,
+            parent: Group::null(),
         }
     }
 
@@ -471,13 +529,16 @@ impl Default for Cylinder {
 }
 
 /// A double-napped cone along the y axis
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, Derivative)]
+#[derivative(PartialEq)]
 pub struct Cone {
     pub transform: Matrix<4, 4>,
     pub material: Material,
     pub min: f32,
     pub max: f32,
     pub closed: bool,
+    #[derivative(PartialEq = "ignore")]
+    parent: Group,
 }
 
 impl Cone {
@@ -490,6 +551,7 @@ impl Cone {
             min: f32::NEG_INFINITY,
             max: f32::INFINITY,
             closed: false,
+            parent: Group::null(),
         }
     }
 
@@ -854,7 +916,7 @@ mod tests {
             c.min = 1.;
             c.max = 2.;
             c.closed = true;
-            assert!(dbg!(c.local_normal_at(point)) == normal);
+            assert!(c.local_normal_at(point) == normal);
         }
     }
 
