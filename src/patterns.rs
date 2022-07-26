@@ -43,7 +43,7 @@ impl Pattern {
     }
 
     pub fn pattern_at_shape(&self, shape: Shape, world_point: Point) -> Color {
-        let object_point = shape.transform().inverse().unwrap() * world_point;
+        let object_point = shape.world_to_object(world_point);
         let pattern_point = self.transform().inverse().unwrap() * object_point;
         match self {
             Self::Striped(s) => s.pattern_at(pattern_point),
