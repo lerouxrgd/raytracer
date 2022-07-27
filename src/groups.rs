@@ -1,12 +1,15 @@
+use std::f32::consts::PI;
+use std::mem;
 use std::sync::RwLock;
 
 use lazy_static::lazy_static;
 use slotmap::{new_key_type, Key, SlotMap};
 
-use crate::intersections::{Intersection, Intersections};
+use crate::intersections::Intersection;
 use crate::matrices::Matrix;
 use crate::rays::Ray;
-use crate::shapes::Shape;
+use crate::shapes::{Cylinder, Shape, Sphere};
+use crate::transformations::*;
 use crate::tuples::{Point, Tuple, Vector};
 
 lazy_static! {
@@ -16,6 +19,7 @@ lazy_static! {
 struct GroupData {
     transform: Matrix<4, 4>,
     shapes: Vec<Shape>,
+    children: Vec<Group>,
     parent: Group,
 }
 
@@ -24,7 +28,7 @@ new_key_type! {
 }
 
 impl Group {
-    pub fn with_identity() -> Self {
+    pub fn new() -> Self {
         Self::with_transform(Matrix::identity())
     }
 
@@ -32,6 +36,7 @@ impl Group {
         let group = GroupData {
             transform,
             shapes: vec![],
+            children: vec![],
             parent: Group::null(),
         };
         let handle = GROUPS.write().unwrap().insert(group);
@@ -39,11 +44,21 @@ impl Group {
     }
 
     pub fn delete(self) {
-        GROUPS.write().unwrap().remove(self);
+        let mut groups = GROUPS.write().unwrap();
+        let group = groups.get_mut(self).unwrap();
+        let children = mem::take(&mut group.children);
+        for child in children {
+            groups.remove(child);
+        }
+        groups.remove(self);
     }
 
     pub fn add_child(&mut self, child: Group) {
         let mut groups = GROUPS.write().unwrap();
+
+        let group = groups.get_mut(*self).unwrap();
+        group.children.push(child);
+
         let child = groups.get_mut(child).unwrap();
         child.parent = *self;
     }
@@ -74,8 +89,10 @@ impl Group {
         for shape in &group.shapes {
             shape.intersect(&mut xs, local_ray);
         }
-        let xs = Intersections::from(xs);
-        xs.into()
+        for child in &group.children {
+            child.intersect(&mut xs, local_ray);
+        }
+        xs
     }
 
     pub fn intersect(&self, intersections: &mut Vec<Intersection>, world_ray: Ray) {
@@ -126,22 +143,59 @@ impl Group {
     }
 }
 
+pub fn hexagon(transform: Matrix<4, 4>) -> Group {
+    fn hexagon_corner() -> Shape {
+        let mut corner = Sphere::new();
+        corner.transform = Transform::new()
+            .scaling(0.25, 0.25, 0.25)
+            .translation(0., 0., -1.)
+            .into();
+        corner.into()
+    }
+
+    fn hexagon_edge() -> Shape {
+        let mut edge = Cylinder::new();
+        edge.min = 0.;
+        edge.max = 1.;
+        edge.transform = Transform::new()
+            .scaling(0.25, 1., 0.25)
+            .rotation_z(-PI / 2.)
+            .rotation_y(-PI / 6.)
+            .translation(0., 0., -1.)
+            .into();
+        edge.into()
+    }
+
+    fn hexagon_side(rot_y: Matrix<4, 4>) -> Group {
+        let mut side = Group::with_transform(rot_y);
+        side.add_shape(hexagon_corner());
+        side.add_shape(hexagon_edge());
+        side
+    }
+
+    let mut hexagon = Group::with_transform(transform);
+    for n in 0..6 {
+        let side = hexagon_side(rotation_y(n as f32 * PI / 3.));
+        hexagon.add_child(side);
+    }
+
+    hexagon
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::shapes::Sphere;
-    use crate::transformations::*;
+    use crate::intersections::Intersections;
     use crate::tuples::{Point, Vector};
-    use std::f32::consts::PI;
 
     #[test]
     fn group_intersections() {
-        let g = Group::with_identity();
+        let g = Group::new();
         let r = Ray::new(Point::new(0., 0., 0.), Vector::new(0., 0., 1.));
         let xs = g.local_intersect(r);
         assert!(xs.is_empty());
 
-        let mut g = Group::with_identity();
+        let mut g = Group::new();
         let s1 = Sphere::new();
         let mut s2 = Sphere::new();
         s2.transform = translation(0., 0., -3.);
@@ -152,6 +206,7 @@ mod tests {
         g.add_shape(s3.into());
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
         let xs = g.local_intersect(r);
+        let xs = Vec::<Intersection>::from(Intersections::from(xs)); // sorted
         assert!(xs.len() == 4);
         assert!(xs[0].object() == s2.into());
         assert!(xs[1].object() == s2.into());
@@ -170,7 +225,7 @@ mod tests {
 
     #[test]
     fn group_normals() {
-        let mut g1 = Group::with_transform(roation_y(PI / 2.));
+        let mut g1 = Group::with_transform(rotation_y(PI / 2.));
         let mut g2 = Group::with_transform(scaling(2., 2., 2.));
         let mut s = Sphere::new();
         s.transform = translation(5., 0., 0.);
@@ -182,7 +237,7 @@ mod tests {
             .world_to_object(p)
             .equal_approx(Point::new(0., 0., -1.)));
 
-        let mut g1 = Group::with_transform(roation_y(PI / 2.));
+        let mut g1 = Group::with_transform(rotation_y(PI / 2.));
         let mut g2 = Group::with_transform(scaling(1., 2., 3.));
         let mut s = Sphere::new();
         s.transform = translation(5., 0., 0.);
@@ -194,7 +249,7 @@ mod tests {
             .normal_to_world(n)
             .equal_approx(Vector::new(0.2857, 0.4286, -0.8571)));
 
-        let mut g1 = Group::with_transform(roation_y(PI / 2.));
+        let mut g1 = Group::with_transform(rotation_y(PI / 2.));
         let mut g2 = Group::with_transform(scaling(1., 2., 3.));
         let mut s = Sphere::new();
         s.transform = translation(5., 0., 0.);

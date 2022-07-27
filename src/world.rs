@@ -1,5 +1,4 @@
-use std::ops::{Index, IndexMut};
-
+use crate::groups::Group;
 use crate::intersections::{Computations, Intersections};
 use crate::lights::PointLight;
 use crate::materials::lighting;
@@ -12,6 +11,7 @@ use crate::tuples::{Color, Point};
 pub struct World {
     pub light: PointLight,
     pub objects: Vec<Shape>,
+    pub groups: Vec<Group>,
 }
 
 impl Default for World {
@@ -29,15 +29,21 @@ impl Default for World {
         Self {
             light,
             objects: vec![s1.into(), s2.into()],
+            groups: vec![],
         }
     }
 }
 
 impl World {
     pub fn intersect(&self, ray: Ray) -> Intersections {
+        let xs = self.groups.iter().fold(vec![], |mut xs, group| {
+            group.intersect(&mut xs, ray);
+            xs
+        });
+
         self.objects
             .iter()
-            .fold(vec![], |mut xs, shape| {
+            .fold(xs, |mut xs, shape| {
                 shape.intersect(&mut xs, ray);
                 xs
             })
@@ -128,17 +134,9 @@ impl World {
     }
 }
 
-impl Index<usize> for World {
-    type Output = Shape;
-
-    fn index(&self, i: usize) -> &Self::Output {
-        &self.objects[i]
-    }
-}
-
-impl IndexMut<usize> for World {
-    fn index_mut(&mut self, i: usize) -> &mut Self::Output {
-        &mut self.objects[i]
+impl Drop for World {
+    fn drop(&mut self) {
+        self.groups.drain(..).for_each(|group| group.delete());
     }
 }
 
@@ -167,7 +165,7 @@ mod tests {
     fn world_shading() {
         let w = World::default();
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
-        let shape = w[0];
+        let shape = w.objects[0];
         let i = Intersection::new(4.0, shape);
         let comps = Computations::prepare(i, r, &vec![].into());
         let c = w.shade_hit(comps, 1);
@@ -176,7 +174,7 @@ mod tests {
         let mut w = World::default();
         w.light = PointLight::new(Point::new(0., 0.25, 0.), Color::white());
         let r = Ray::new(Point::new(0., 0., 0.), Vector::new(0., 0., 1.));
-        let shape = w[1];
+        let shape = w.objects[1];
         let i = Intersection::new(0.5, shape);
         let comps = Computations::prepare(i, r, &vec![].into());
         let c = w.shade_hit(comps, 1);
@@ -193,10 +191,10 @@ mod tests {
             .equal_approx(Color::new(0.38066, 0.47583, 0.2855)));
 
         let mut w = World::default();
-        w[0].material_mut().ambient = 1.0;
-        w[1].material_mut().ambient = 1.0;
+        w.objects[0].material_mut().ambient = 1.0;
+        w.objects[1].material_mut().ambient = 1.0;
         let r = Ray::new(Point::new(0., 0., 0.75), Vector::new(0., 0., -1.));
-        assert!(w.color_at(r, 1).equal_approx(w[1].material().color));
+        assert!(w.color_at(r, 1).equal_approx(w.objects[1].material().color));
 
         let mut w = World::default();
         w.light = PointLight::new(Point::new(0., 0., -10.), Color::white());
@@ -234,9 +232,9 @@ mod tests {
     #[test]
     fn world_reflection() {
         let mut w = World::default();
-        w[1].material_mut().ambient = 1.;
+        w.objects[1].material_mut().ambient = 1.;
         let r = Ray::new(Point::new(0., 0., 0.), Vector::new(0., 0., 1.));
-        let i = Intersection::new(1., w[1]);
+        let i = Intersection::new(1., w.objects[1]);
         let comps = Computations::prepare(i, r, &vec![].into());
         assert!(w.reflected_color(comps, 1) == Color::black());
 
@@ -288,46 +286,52 @@ mod tests {
     fn world_refraction() {
         let w = World::default();
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
-        let xs: Intersections =
-            vec![Intersection::new(4., w[1]), Intersection::new(6., w[1])].into();
+        let xs: Intersections = vec![
+            Intersection::new(4., w.objects[1]),
+            Intersection::new(6., w.objects[1]),
+        ]
+        .into();
         let comps = Computations::prepare(xs[0], r, &xs);
         assert!(w.refracted_color(comps, 1) == Color::black());
 
         let mut w = World::default();
-        w[0].material_mut().transparency = 1.;
-        w[0].material_mut().refractive_index = 1.5;
+        w.objects[0].material_mut().transparency = 1.;
+        w.objects[0].material_mut().refractive_index = 1.5;
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
-        let xs: Intersections =
-            vec![Intersection::new(4., w[1]), Intersection::new(6., w[1])].into();
+        let xs: Intersections = vec![
+            Intersection::new(4., w.objects[1]),
+            Intersection::new(6., w.objects[1]),
+        ]
+        .into();
         let comps = Computations::prepare(xs[0], r, &xs);
         assert!(w.refracted_color(comps, 0) == Color::black());
 
         let mut w = World::default();
-        w[0].material_mut().transparency = 1.;
-        w[0].material_mut().refractive_index = 1.5;
+        w.objects[0].material_mut().transparency = 1.;
+        w.objects[0].material_mut().refractive_index = 1.5;
         let r = Ray::new(
             Point::new(0., 0., f32::sqrt(2.) / 2.),
             Vector::new(0., 1., 0.),
         );
         let xs: Intersections = vec![
-            Intersection::new(-f32::sqrt(2.) / 2., w[1]),
-            Intersection::new(f32::sqrt(2.) / 2., w[1]),
+            Intersection::new(-f32::sqrt(2.) / 2., w.objects[1]),
+            Intersection::new(f32::sqrt(2.) / 2., w.objects[1]),
         ]
         .into();
         let comps = Computations::prepare(xs[1], r, &xs);
         assert!(w.refracted_color(comps, 1) == Color::black());
 
         let mut w = World::default();
-        w[0].material_mut().ambient = 1.;
-        w[0].material_mut().pattern = XyzRgb::new().into();
-        w[1].material_mut().transparency = 1.;
-        w[1].material_mut().refractive_index = 1.5;
+        w.objects[0].material_mut().ambient = 1.;
+        w.objects[0].material_mut().pattern = XyzRgb::new().into();
+        w.objects[1].material_mut().transparency = 1.;
+        w.objects[1].material_mut().refractive_index = 1.5;
         let r = Ray::new(Point::new(0., 0., 0.1), Vector::new(0., 1., 0.));
         let xs: Intersections = vec![
-            Intersection::new(-0.9899, w[0]),
-            Intersection::new(-0.4899, w[1]),
-            Intersection::new(0.4899, w[1]),
-            Intersection::new(0.9899, w[0]),
+            Intersection::new(-0.9899, w.objects[0]),
+            Intersection::new(-0.4899, w.objects[1]),
+            Intersection::new(0.4899, w.objects[1]),
+            Intersection::new(0.9899, w.objects[0]),
         ]
         .into();
         let comps = Computations::prepare(xs[2], r, &xs);

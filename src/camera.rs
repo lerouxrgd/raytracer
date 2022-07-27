@@ -111,7 +111,7 @@ mod tests {
         let mut c = Camera::new(201, 101, PI / 2.);
         c.transform = Transform::new()
             .translation(0., -2., 5.)
-            .roation_y(PI / 4.)
+            .rotation_y(PI / 4.)
             .into();
         let r = c.ray_for_pixel(100, 50);
         assert!(r.origin.equal_approx(Point::new(0., 2., -5.)));

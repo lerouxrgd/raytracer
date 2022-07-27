@@ -31,26 +31,6 @@ impl Shape {
         }
     }
 
-    pub fn transform_mut(&mut self) -> &mut Matrix<4, 4> {
-        match self {
-            Self::Sphere(Sphere {
-                ref mut transform, ..
-            })
-            | Self::Plane(Plane {
-                ref mut transform, ..
-            })
-            | Self::Cylinder(Cylinder {
-                ref mut transform, ..
-            })
-            | Self::Cone(Cone {
-                ref mut transform, ..
-            })
-            | Self::Cube(Cube {
-                ref mut transform, ..
-            }) => transform,
-        }
-    }
-
     pub fn material(&self) -> Material {
         match self {
             &Self::Sphere(Sphere { material, .. })
@@ -740,7 +720,7 @@ mod tests {
 
         let mut s = Sphere::new();
         s.transform = Transform::new()
-            .roation_z(PI / 5.)
+            .rotation_z(PI / 5.)
             .scaling(1., 0.5, 1.)
             .into();
         let p = Point::new(0., f32::sqrt(2.) / 2., -f32::sqrt(2.) / 2.);

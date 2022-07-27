@@ -28,7 +28,7 @@ pub fn rotation_x(angle: f32) -> Matrix<4, 4> {
     transform
 }
 
-pub fn roation_y(angle: f32) -> Matrix<4, 4> {
+pub fn rotation_y(angle: f32) -> Matrix<4, 4> {
     let mut transform = Matrix::identity();
     transform[0][0] = angle.cos();
     transform[0][2] = angle.sin();
@@ -37,7 +37,7 @@ pub fn roation_y(angle: f32) -> Matrix<4, 4> {
     transform
 }
 
-pub fn roation_z(angle: f32) -> Matrix<4, 4> {
+pub fn rotation_z(angle: f32) -> Matrix<4, 4> {
     let mut transform = Matrix::identity();
     transform[0][0] = angle.cos();
     transform[0][1] = -angle.sin();
@@ -79,13 +79,13 @@ impl Transform {
         self
     }
 
-    pub fn roation_y(mut self, angle: f32) -> Self {
-        self.0 = roation_y(angle) * self.0;
+    pub fn rotation_y(mut self, angle: f32) -> Self {
+        self.0 = rotation_y(angle) * self.0;
         self
     }
 
-    pub fn roation_z(mut self, angle: f32) -> Self {
-        self.0 = roation_z(angle) * self.0;
+    pub fn rotation_z(mut self, angle: f32) -> Self {
+        self.0 = rotation_z(angle) * self.0;
         self
     }
 
@@ -180,14 +180,14 @@ mod tests {
         )));
 
         let p = Point::new(0., 0., 1.);
-        let r1 = roation_y(PI / 4.);
-        let r2 = roation_y(PI / 2.);
+        let r1 = rotation_y(PI / 4.);
+        let r2 = rotation_y(PI / 2.);
         assert!((r1 * p).equal_approx(Point::new(f32::sqrt(2.) / 2., 0., f32::sqrt(2.) / 2.)));
         assert!((r2 * p).equal_approx(Point::new(1., 0., 0.)));
 
         let p = Point::new(0., 1., 0.);
-        let r1 = roation_z(PI / 4.);
-        let r2 = roation_z(PI / 2.);
+        let r1 = rotation_z(PI / 4.);
+        let r2 = rotation_z(PI / 2.);
         assert!((r1 * p).equal_approx(Point::new(-f32::sqrt(2.) / 2., f32::sqrt(2.) / 2., 0.)));
         assert!((r2 * p).equal_approx(Point::new(-1., 0., 0.)));
     }

@@ -8,11 +8,13 @@ use raytracer::transformations::*;
 use raytracer::tuples::{Color, Point, Vector};
 use raytracer::world::World;
 
+// TODO: consider "caching" inverse by making it a regular field
+
 fn main() {
     let mut floor = Plane::new();
     let mut pattern = Checker::new(Color::white(), Color::black());
     pattern.transform = Transform::new()
-        .roation_y(PI / 4.)
+        .rotation_y(PI / 4.)
         .scaling(0.4, 0.4, 0.4)
         .into();
     floor.material.pattern = pattern.into();
@@ -53,14 +55,27 @@ fn main() {
     left.material.diffuse = 0.7;
     left.material.specular = 0.3;
 
+    let objects = vec![
+        floor.into(),
+        backdrop.into(),
+        middle.into(),
+        right.into(),
+        left.into(),
+    ];
+
+    let groups = vec![
+        // //
+        // raytracer::groups::hexagon(
+        //     Transform::new()
+        //         .rotation_x(PI / 3.0)
+        //         .translation(0.0, 0.75, 0.0)
+        //         .into(),
+        // ),
+    ];
+
     let world = World {
-        objects: vec![
-            floor.into(),
-            backdrop.into(),
-            middle.into(),
-            right.into(),
-            left.into(),
-        ],
+        objects,
+        groups,
         light: PointLight::new(Point::new(-10., 10., -10.), Color::white()),
     };
 
