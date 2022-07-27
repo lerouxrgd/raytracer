@@ -90,13 +90,13 @@ impl Shape {
             Shape::Cylinder(c) => {
                 c.local_intersect(local_ray)
                     .into_iter()
-                    .filter_map(|xs| xs)
+                    .flatten()
                     .for_each(|xs| intersections.push(xs));
             }
             Shape::Cone(c) => {
                 c.local_intersect(local_ray)
                     .into_iter()
-                    .filter_map(|xs| xs)
+                    .flatten()
                     .for_each(|xs| intersections.push(xs));
             }
             Shape::Cube(s) => {
@@ -374,11 +374,11 @@ impl Cube {
             .unwrap();
 
         if local_point.x().abs() == maxc.into() {
-            return Vector::new(local_point.x(), 0., 0.);
+            Vector::new(local_point.x(), 0., 0.)
         } else if local_point.y().abs() == maxc.into() {
-            return Vector::new(0., local_point.y(), 0.);
+            Vector::new(0., local_point.y(), 0.)
         } else if local_point.z().abs() == maxc.into() {
-            return Vector::new(0., 0., local_point.z());
+            Vector::new(0., 0., local_point.z())
         } else {
             unreachable!()
         }

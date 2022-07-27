@@ -82,6 +82,10 @@ impl Group {
         group.shapes.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn local_intersect(&self, local_ray: Ray) -> Vec<Intersection> {
         let groups = GROUPS.read().unwrap();
         let group = groups.get(*self).unwrap();

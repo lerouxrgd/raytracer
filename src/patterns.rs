@@ -230,6 +230,12 @@ impl XyzRgb {
     }
 }
 
+impl Default for XyzRgb {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl From<XyzRgb> for Pattern {
     fn from(xyz: XyzRgb) -> Self {
         Pattern::XyzRgb(xyz)
