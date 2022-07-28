@@ -30,27 +30,28 @@ fn main() {
     backdrop.material.color = Color::new(1., 0.9, 0.9);
     backdrop.material.specular = 0.;
 
-    let mut middle = Sphere::new();
-    middle.transform = translation(-0.5, 1., 0.5);
+    let mut middle = Sphere::default().with_transform(translation(-0.5, 1., 0.5));
     middle.material.color = Color::new(0.1, 0.4, 0.9);
     middle.material.diffuse = 0.7;
     middle.material.specular = 0.3;
     middle.material.reflective = 0.8;
 
-    let mut right = Sphere::new();
-    right.transform = Transform::new()
-        .scaling(0.5, 0.5, 0.5)
-        .translation(1.5, 0.5, -0.5)
-        .into();
+    let mut right = Sphere::default().with_transform(
+        Transform::new()
+            .scaling(0.5, 0.5, 0.5)
+            .translation(1.5, 0.5, -0.5)
+            .into(),
+    );
     right.material.color = Color::new(0.5, 1., 0.1);
     right.material.diffuse = 0.7;
     right.material.specular = 0.3;
 
-    let mut left = Sphere::new();
-    left.transform = Transform::new()
-        .scaling(0.33, 0.33, 0.33)
-        .translation(-1.5, 0.33, -0.75)
-        .into();
+    let mut left = Sphere::default().with_transform(
+        Transform::new()
+            .scaling(0.33, 0.33, 0.33)
+            .translation(-1.5, 0.33, -0.75)
+            .into(),
+    );
     left.material.color = Color::new(1., 0.8, 0.1);
     left.material.diffuse = 0.7;
     left.material.specular = 0.3;

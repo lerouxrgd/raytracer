@@ -214,19 +214,16 @@ impl From<&Cone> for Shape {
 #[derive(Debug, Clone, Copy, Derivative)]
 #[derivative(PartialEq)]
 pub struct Sphere {
-    pub transform: Matrix<4, 4>,
+    transform: Matrix<4, 4>,
     pub material: Material,
     #[derivative(PartialEq = "ignore")]
     parent: Group,
 }
 
 impl Sphere {
-    pub fn new() -> Self {
-        Self {
-            transform: Matrix::identity(),
-            material: Material::default(),
-            parent: Group::null(),
-        }
+    pub fn with_transform(mut self, transform: Matrix<4, 4>) -> Self {
+        self.transform = transform;
+        self
     }
 
     pub fn local_intersect(&self, local_ray: Ray) -> Option<[Intersection; 2]> {
@@ -254,7 +251,11 @@ impl Sphere {
 
 impl Default for Sphere {
     fn default() -> Self {
-        Self::new()
+        Self {
+            transform: Matrix::identity(),
+            material: Material::default(),
+            parent: Group::null(),
+        }
     }
 }
 
@@ -647,41 +648,41 @@ mod tests {
     #[test]
     fn sphere_ray_intersect() {
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
-        let s = Sphere::new();
+        let s = Sphere::default();
         let xs = s.local_intersect(r);
         assert!(xs.unwrap()[0].object() == Shape::Sphere(s));
         assert!(xs.unwrap()[1].object() == Shape::Sphere(s));
 
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
-        let s = Sphere::new();
+        let s = Sphere::default();
         let xs = s.local_intersect(r);
         assert!(xs.unwrap()[0].t() == 4.);
         assert!(xs.unwrap()[1].t() == 6.);
 
         let r = Ray::new(Point::new(0., 1., -5.), Vector::new(0., 0., 1.));
-        let s = Sphere::new();
+        let s = Sphere::default();
         let xs = s.local_intersect(r);
         assert!(xs.unwrap()[0].t() == 5.);
         assert!(xs.unwrap()[1].t() == 5.);
 
         let r = Ray::new(Point::new(0., 2., -5.), Vector::new(0., 0., 1.));
-        let s = Sphere::new();
+        let s = Sphere::default();
         let xs = s.local_intersect(r);
         assert!(xs.is_none());
 
         let r = Ray::new(Point::new(0., 0., 0.), Vector::new(0., 0., 1.));
-        let s = Sphere::new();
+        let s = Sphere::default();
         let xs = s.local_intersect(r);
         assert!(xs.unwrap()[0].t() == -1.);
         assert!(xs.unwrap()[1].t() == 1.);
 
         let r = Ray::new(Point::new(0., 0., 5.), Vector::new(0., 0., 1.));
-        let s = Sphere::new();
+        let s = Sphere::default();
         let xs = s.local_intersect(r);
         assert!(xs.unwrap()[0].t() == -6.);
         assert!(xs.unwrap()[1].t() == -4.);
 
-        let mut s = Sphere::new();
+        let mut s = Sphere::default();
         s.transform = scaling(2., 2., 2.);
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
         let mut xs = vec![];
@@ -689,7 +690,7 @@ mod tests {
         assert!(xs[0].t() == 3.);
         assert!(xs[1].t() == 7.);
 
-        let mut s = Sphere::new();
+        let mut s = Sphere::default();
         s.transform = translation(5., 0., 0.);
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
         let mut xs = vec![];
@@ -699,12 +700,12 @@ mod tests {
 
     #[test]
     fn sphere_normal() {
-        let s = Sphere::new();
+        let s = Sphere::default();
         assert!(s.local_normal_at(Point::new(1., 0., 0.)) == Vector::new(1., 0., 0.));
         assert!(s.local_normal_at(Point::new(0., 1., 0.)) == Vector::new(0., 1., 0.));
         assert!(s.local_normal_at(Point::new(0., 0., 1.)) == Vector::new(0., 0., 1.));
 
-        let s = Sphere::new();
+        let s = Sphere::default();
         let p = Point::new(f32::sqrt(3.) / 3., f32::sqrt(3.) / 3., f32::sqrt(3.) / 3.);
         let n = Vector::new(f32::sqrt(3.) / 3., f32::sqrt(3.) / 3., f32::sqrt(3.) / 3.);
         assert!(s.local_normal_at(p).equal_approx(n));
@@ -712,13 +713,13 @@ mod tests {
             .local_normal_at(p)
             .equal_approx(s.local_normal_at(p).normalize()));
 
-        let mut s = Sphere::new();
+        let mut s = Sphere::default();
         s.transform = translation(0., 1., 0.);
         let p = Point::new(0., 1.70711, -0.70711);
         let n = Shape::Sphere(s).normal_at(p);
         assert!(n.equal_approx(Vector::new(0., 0.70711, -0.70711)));
 
-        let mut s = Sphere::new();
+        let mut s = Sphere::default();
         s.transform = Transform::new()
             .rotation_z(PI / 5.)
             .scaling(1., 0.5, 1.)

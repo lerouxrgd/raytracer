@@ -98,7 +98,7 @@ mod tests {
     #[test]
     fn lighting_basics() {
         let m = Material::default();
-        let s = Shape::Sphere(Sphere::new());
+        let s = Shape::Sphere(Sphere::default());
         let pos = Point::new(0., 0., 0.);
 
         let eyev = Vector::new(0., 0., -1.);
@@ -140,7 +140,7 @@ mod tests {
 
     #[test]
     fn lighting_patterns() {
-        let s = Shape::Sphere(Sphere::new());
+        let s = Shape::Sphere(Sphere::default());
         let mut m = Material::default();
         m.pattern = Striped::new(Color::white(), Color::black()).into();
         m.ambient = 1.;
