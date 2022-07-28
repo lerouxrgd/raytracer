@@ -214,19 +214,16 @@ impl From<&Cone> for Shape {
 #[derive(Debug, Clone, Copy, Derivative)]
 #[derivative(PartialEq)]
 pub struct Sphere {
-    pub transform: Matrix<4, 4>,
+    transform: Matrix<4, 4>,
     pub material: Material,
     #[derivative(PartialEq = "ignore")]
     parent: Group,
 }
 
 impl Sphere {
-    pub fn new() -> Self {
-        Self {
-            transform: Matrix::identity(),
-            material: Material::default(),
-            parent: Group::null(),
-        }
+    pub fn with_transform(mut self, transform: Matrix<4, 4>) -> Self {
+        self.transform = transform;
+        self
     }
 
     pub fn local_intersect(&self, local_ray: Ray) -> Option<[Intersection; 2]> {
@@ -254,7 +251,11 @@ impl Sphere {
 
 impl Default for Sphere {
     fn default() -> Self {
-        Self::new()
+        Self {
+            transform: Matrix::identity(),
+            material: Material::default(),
+            parent: Group::null(),
+        }
     }
 }
 
@@ -262,7 +263,7 @@ impl Default for Sphere {
 #[derive(Debug, Clone, Copy, Derivative)]
 #[derivative(PartialEq)]
 pub struct Plane {
-    pub transform: Matrix<4, 4>,
+    transform: Matrix<4, 4>,
     pub material: Material,
     #[derivative(PartialEq = "ignore")]
     parent: Group,
@@ -271,12 +272,9 @@ pub struct Plane {
 impl Plane {
     pub const EPSILON: f32 = 1e-4;
 
-    pub fn new() -> Self {
-        Self {
-            transform: Matrix::identity(),
-            material: Material::default(),
-            parent: Group::null(),
-        }
+    pub fn with_transform(mut self, transform: Matrix<4, 4>) -> Self {
+        self.transform = transform;
+        self
     }
 
     pub fn local_intersect(&self, local_ray: Ray) -> Option<Intersection> {
@@ -295,7 +293,11 @@ impl Plane {
 
 impl Default for Plane {
     fn default() -> Self {
-        Self::new()
+        Self {
+            transform: Matrix::identity(),
+            material: Material::default(),
+            parent: Group::null(),
+        }
     }
 }
 
@@ -303,7 +305,7 @@ impl Default for Plane {
 #[derive(Debug, Clone, Copy, Derivative)]
 #[derivative(PartialEq)]
 pub struct Cube {
-    pub transform: Matrix<4, 4>,
+    transform: Matrix<4, 4>,
     pub material: Material,
     #[derivative(PartialEq = "ignore")]
     parent: Group,
@@ -312,12 +314,9 @@ pub struct Cube {
 impl Cube {
     pub const EPSILON: f32 = 1e-4;
 
-    pub fn new() -> Self {
-        Self {
-            transform: Matrix::identity(),
-            material: Material::default(),
-            parent: Group::null(),
-        }
+    pub fn with_transform(mut self, transform: Matrix<4, 4>) -> Self {
+        self.transform = transform;
+        self
     }
 
     fn check_axis(origin: f32, direction: f32) -> (f32, f32) {
@@ -387,7 +386,11 @@ impl Cube {
 
 impl Default for Cube {
     fn default() -> Self {
-        Self::new()
+        Self {
+            transform: Matrix::identity(),
+            material: Material::default(),
+            parent: Group::null(),
+        }
     }
 }
 
@@ -395,7 +398,7 @@ impl Default for Cube {
 #[derive(Debug, Clone, Copy, Derivative)]
 #[derivative(PartialEq)]
 pub struct Cylinder {
-    pub transform: Matrix<4, 4>,
+    transform: Matrix<4, 4>,
     pub material: Material,
     pub min: f32,
     pub max: f32,
@@ -407,15 +410,9 @@ pub struct Cylinder {
 impl Cylinder {
     pub const EPSILON: f32 = 1e-4;
 
-    pub fn new() -> Self {
-        Self {
-            transform: Matrix::identity(),
-            material: Material::default(),
-            min: f32::NEG_INFINITY,
-            max: f32::INFINITY,
-            closed: false,
-            parent: Group::null(),
-        }
+    pub fn with_transform(mut self, transform: Matrix<4, 4>) -> Self {
+        self.transform = transform;
+        self
     }
 
     /// A helper to reduce duplication.
@@ -504,7 +501,14 @@ impl Cylinder {
 
 impl Default for Cylinder {
     fn default() -> Self {
-        Self::new()
+        Self {
+            transform: Matrix::identity(),
+            material: Material::default(),
+            min: f32::NEG_INFINITY,
+            max: f32::INFINITY,
+            closed: false,
+            parent: Group::null(),
+        }
     }
 }
 
@@ -512,7 +516,7 @@ impl Default for Cylinder {
 #[derive(Debug, Clone, Copy, Derivative)]
 #[derivative(PartialEq)]
 pub struct Cone {
-    pub transform: Matrix<4, 4>,
+    transform: Matrix<4, 4>,
     pub material: Material,
     pub min: f32,
     pub max: f32,
@@ -524,15 +528,9 @@ pub struct Cone {
 impl Cone {
     pub const EPSILON: f32 = 1e-4;
 
-    pub fn new() -> Self {
-        Self {
-            transform: Matrix::identity(),
-            material: Material::default(),
-            min: f32::NEG_INFINITY,
-            max: f32::INFINITY,
-            closed: false,
-            parent: Group::null(),
-        }
+    pub fn with_transform(mut self, transform: Matrix<4, 4>) -> Self {
+        self.transform = transform;
+        self
     }
 
     /// A helper to reduce duplication.
@@ -633,7 +631,14 @@ impl Cone {
 
 impl Default for Cone {
     fn default() -> Self {
-        Self::new()
+        Self {
+            transform: Matrix::identity(),
+            material: Material::default(),
+            min: f32::NEG_INFINITY,
+            max: f32::INFINITY,
+            closed: false,
+            parent: Group::null(),
+        }
     }
 }
 
@@ -647,50 +652,48 @@ mod tests {
     #[test]
     fn sphere_ray_intersect() {
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
-        let s = Sphere::new();
+        let s = Sphere::default();
         let xs = s.local_intersect(r);
         assert!(xs.unwrap()[0].object() == Shape::Sphere(s));
         assert!(xs.unwrap()[1].object() == Shape::Sphere(s));
 
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
-        let s = Sphere::new();
+        let s = Sphere::default();
         let xs = s.local_intersect(r);
         assert!(xs.unwrap()[0].t() == 4.);
         assert!(xs.unwrap()[1].t() == 6.);
 
         let r = Ray::new(Point::new(0., 1., -5.), Vector::new(0., 0., 1.));
-        let s = Sphere::new();
+        let s = Sphere::default();
         let xs = s.local_intersect(r);
         assert!(xs.unwrap()[0].t() == 5.);
         assert!(xs.unwrap()[1].t() == 5.);
 
         let r = Ray::new(Point::new(0., 2., -5.), Vector::new(0., 0., 1.));
-        let s = Sphere::new();
+        let s = Sphere::default();
         let xs = s.local_intersect(r);
         assert!(xs.is_none());
 
         let r = Ray::new(Point::new(0., 0., 0.), Vector::new(0., 0., 1.));
-        let s = Sphere::new();
+        let s = Sphere::default();
         let xs = s.local_intersect(r);
         assert!(xs.unwrap()[0].t() == -1.);
         assert!(xs.unwrap()[1].t() == 1.);
 
         let r = Ray::new(Point::new(0., 0., 5.), Vector::new(0., 0., 1.));
-        let s = Sphere::new();
+        let s = Sphere::default();
         let xs = s.local_intersect(r);
         assert!(xs.unwrap()[0].t() == -6.);
         assert!(xs.unwrap()[1].t() == -4.);
 
-        let mut s = Sphere::new();
-        s.transform = scaling(2., 2., 2.);
+        let s = Sphere::default().with_transform(scaling(2., 2., 2.));
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
         let mut xs = vec![];
         Shape::Sphere(s).intersect(&mut xs, r);
         assert!(xs[0].t() == 3.);
         assert!(xs[1].t() == 7.);
 
-        let mut s = Sphere::new();
-        s.transform = translation(5., 0., 0.);
+        let s = Sphere::default().with_transform(translation(5., 0., 0.));
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
         let mut xs = vec![];
         Shape::Sphere(s).intersect(&mut xs, r);
@@ -699,12 +702,12 @@ mod tests {
 
     #[test]
     fn sphere_normal() {
-        let s = Sphere::new();
+        let s = Sphere::default();
         assert!(s.local_normal_at(Point::new(1., 0., 0.)) == Vector::new(1., 0., 0.));
         assert!(s.local_normal_at(Point::new(0., 1., 0.)) == Vector::new(0., 1., 0.));
         assert!(s.local_normal_at(Point::new(0., 0., 1.)) == Vector::new(0., 0., 1.));
 
-        let s = Sphere::new();
+        let s = Sphere::default();
         let p = Point::new(f32::sqrt(3.) / 3., f32::sqrt(3.) / 3., f32::sqrt(3.) / 3.);
         let n = Vector::new(f32::sqrt(3.) / 3., f32::sqrt(3.) / 3., f32::sqrt(3.) / 3.);
         assert!(s.local_normal_at(p).equal_approx(n));
@@ -712,17 +715,17 @@ mod tests {
             .local_normal_at(p)
             .equal_approx(s.local_normal_at(p).normalize()));
 
-        let mut s = Sphere::new();
-        s.transform = translation(0., 1., 0.);
+        let s = Sphere::default().with_transform(translation(0., 1., 0.));
         let p = Point::new(0., 1.70711, -0.70711);
         let n = Shape::Sphere(s).normal_at(p);
         assert!(n.equal_approx(Vector::new(0., 0.70711, -0.70711)));
 
-        let mut s = Sphere::new();
-        s.transform = Transform::new()
-            .rotation_z(PI / 5.)
-            .scaling(1., 0.5, 1.)
-            .into();
+        let s = Sphere::default().with_transform(
+            Transform::new()
+                .rotation_z(PI / 5.)
+                .scaling(1., 0.5, 1.)
+                .into(),
+        );
         let p = Point::new(0., f32::sqrt(2.) / 2., -f32::sqrt(2.) / 2.);
         let n = Shape::Sphere(s).normal_at(p);
         assert!(n.equal_approx(Vector::new(0., 0.97014, -0.24254)));
@@ -730,7 +733,7 @@ mod tests {
 
     #[test]
     fn plane_basics() {
-        let p = Plane::new();
+        let p = Plane::default();
         assert!(p.local_normal_at(Point::new(0., 0., 0.)) == Vector::new(0., 1., 0.));
         assert!(p.local_normal_at(Point::new(10., 0., -10.)) == Vector::new(0., 1., 0.));
         assert!(p.local_normal_at(Point::new(-5., 0., 150.)) == Vector::new(0., 1., 0.));
@@ -760,7 +763,7 @@ mod tests {
             (Point::new(0., 0.5, 0.), Vector::new(0., 0., 1.), -1., 1.), // inside
         ];
         for (origin, direction, t1, t2) in cases.into_iter() {
-            let c = Cube::new();
+            let c = Cube::default();
             let r = Ray::new(origin, direction);
             let xs = c.local_intersect(r).unwrap();
             assert!(xs[0].t() == t1);
@@ -776,7 +779,7 @@ mod tests {
             (Point::new(2., 2., 0.), Vector::new(-1., 0., 0.)),
         ];
         for (origin, direction) in cases.into_iter() {
-            let c = Cube::new();
+            let c = Cube::default();
             let r = Ray::new(origin, direction);
             let xs = c.local_intersect(r);
             assert!(xs.is_none());
@@ -793,7 +796,7 @@ mod tests {
             (Point::new(-1., -1., -1.), Vector::new(-1., 0., 0.)),
         ];
         for (point, normal) in cases.into_iter() {
-            let c = Cube::new();
+            let c = Cube::default();
             assert!(c.local_normal_at(point) == normal);
         }
     }
@@ -806,7 +809,7 @@ mod tests {
             (Point::new(0., 0., -5.), Vector::new(1., 1., 1.)),
         ];
         for (origin, direction) in cases.into_iter() {
-            let c = Cylinder::new();
+            let c = Cylinder::default();
             let direction = direction.normalize();
             let r = Ray::new(origin, direction);
             assert!(c.local_intersect(r) == [None, None]);
@@ -823,7 +826,7 @@ mod tests {
             ),
         ];
         for (origin, direction, t1, t2) in cases.into_iter() {
-            let c = Cylinder::new();
+            let c = Cylinder::default();
             let direction = direction.normalize();
             let r = Ray::new(origin, direction);
             let xs = c
@@ -842,7 +845,7 @@ mod tests {
             (Point::new(-1., 1., 0.), Vector::new(-1., 0., 0.)),
         ];
         for (point, normal) in cases.into_iter() {
-            let c = Cylinder::new();
+            let c = Cylinder::default();
             assert!(c.local_normal_at(point) == normal);
         }
     }
@@ -858,7 +861,7 @@ mod tests {
             (Point::new(0., 1.5, -2.), Vector::new(0., 0., 1.), 2),
         ];
         for (origin, direction, count) in cases.into_iter() {
-            let mut c = Cylinder::new();
+            let mut c = Cylinder::default();
             c.min = 1.;
             c.max = 2.;
             let direction = direction.normalize();
@@ -874,7 +877,7 @@ mod tests {
             // (Point::new(0., -1., -2.), Vector::new(0., 1., 1.), 2),
         ];
         for (point, direction, count) in cases.into_iter() {
-            let mut c = Cylinder::new();
+            let mut c = Cylinder::default();
             c.min = 1.;
             c.max = 2.;
             c.closed = true;
@@ -892,7 +895,7 @@ mod tests {
             (Point::new(0., 2., 0.5), Vector::new(0., 1., 0.)),
         ];
         for (point, normal) in cases.into_iter() {
-            let mut c = Cylinder::new();
+            let mut c = Cylinder::default();
             c.min = 1.;
             c.max = 2.;
             c.closed = true;
@@ -918,7 +921,7 @@ mod tests {
             ),
         ];
         for (origin, direction, t1, t2) in cases.into_iter() {
-            let c = Cone::new();
+            let c = Cone::default();
             let direction = direction.normalize();
             let r = Ray::new(origin, direction);
             let xs = c
@@ -930,7 +933,7 @@ mod tests {
             assert!((xs[1].t() - t2).abs() < Cone::EPSILON);
         }
 
-        let c = Cone::new();
+        let c = Cone::default();
         let direction = Vector::new(0., 1., 1.).normalize();
         let r = Ray::new(Point::new(0., 0., -1.), direction);
         let xs = c.local_intersect(r);
@@ -942,7 +945,7 @@ mod tests {
             (Point::new(0., 0., -0.25), Vector::new(0., 1., 0.), 4),
         ];
         for (origin, direction, count) in cases.into_iter() {
-            let mut c = Cone::new();
+            let mut c = Cone::default();
             c.min = -0.5;
             c.max = 0.5;
             c.closed = true;
@@ -957,7 +960,7 @@ mod tests {
             (Point::new(-1., -1., 0.), Vector::new(-1., 1., 0.)),
         ];
         for (point, normal) in cases.into_iter() {
-            let c = Cone::new();
+            let c = Cone::default();
             assert!(c.local_normal_at(point) == normal);
         }
     }

@@ -271,20 +271,18 @@ mod tests {
 
     #[test]
     fn striped_transform() {
-        let mut shape = Sphere::new();
-        shape.transform = scaling(2., 2., 2.);
+        let shape = Sphere::default().with_transform(scaling(2., 2., 2.));
         let p: Pattern = Striped::new(Color::white(), Color::black()).into();
         let c = p.pattern_at_shape(shape.into(), Point::new(1.5, 0., 0.));
         assert!(c == Color::white());
 
-        let shape = Sphere::new();
+        let shape = Sphere::default();
         let mut p: Pattern = Striped::new(Color::white(), Color::black()).into();
         *p.transform_mut() = scaling(2., 2., 2.);
         let c = p.pattern_at_shape(shape.into(), Point::new(1.5, 0., 0.));
         assert!(c == Color::white());
 
-        let mut shape = Sphere::new();
-        shape.transform = scaling(2., 2., 2.);
+        let shape = Sphere::default().with_transform(scaling(2., 2., 2.));
         let mut p: Pattern = Striped::new(Color::white(), Color::black()).into();
         *p.transform_mut() = translation(0.5, 0., 0.);
         let c = p.pattern_at_shape(shape.into(), Point::new(2.5, 0., 0.));

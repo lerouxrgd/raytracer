@@ -18,13 +18,12 @@ impl Default for World {
     fn default() -> Self {
         let light = PointLight::new(Point::new(-10., 10., -10.), Color::white());
 
-        let mut s1 = Sphere::new();
+        let mut s1 = Sphere::default();
         s1.material.color = Color::new(0.8, 1., 0.6);
         s1.material.diffuse = 0.7;
         s1.material.specular = 0.2;
 
-        let mut s2 = Sphere::new();
-        s2.transform = scaling(0.5, 0.5, 0.5);
+        let s2 = Sphere::default().with_transform(scaling(0.5, 0.5, 0.5));
 
         Self {
             light,
@@ -198,10 +197,9 @@ mod tests {
 
         let mut w = World::default();
         w.light = PointLight::new(Point::new(0., 0., -10.), Color::white());
-        let s1 = Sphere::new();
+        let s1 = Sphere::default();
         w.objects.push(s1.into());
-        let mut s2 = Sphere::new();
-        s2.transform = translation(0., 0., 10.);
+        let s2 = Sphere::default().with_transform(translation(0., 0., 10.));
         w.objects.push(s2.into());
         let r = Ray::new(Point::new(0., 0., 5.), Vector::new(0., 0., 1.));
         let i = Intersection::new(4., s2.into());
@@ -239,9 +237,8 @@ mod tests {
         assert!(w.reflected_color(comps, 1) == Color::black());
 
         let mut w = World::default();
-        let mut shape = Plane::new();
+        let mut shape = Plane::default().with_transform(translation(0., -1., 0.));
         shape.material.reflective = 0.5;
-        shape.transform = translation(0., -1., 0.);
         w.objects.push(shape.into());
         let r = Ray::new(
             Point::new(0., 0., -3.),
@@ -254,9 +251,8 @@ mod tests {
             .equal_approx(Color::new(0.19032, 0.2379, 0.14274)));
 
         let mut w = World::default();
-        let mut shape = Plane::new();
+        let mut shape = Plane::default().with_transform(translation(0., -1., 0.));
         shape.material.reflective = 0.5;
-        shape.transform = translation(0., -1., 0.);
         w.objects.push(shape.into());
         let r = Ray::new(
             Point::new(0., 0., -3.),
@@ -270,13 +266,11 @@ mod tests {
 
         let mut w = World::default();
         w.light = PointLight::new(Point::new(0., 0., 0.), Color::white());
-        let mut lower = Plane::new();
+        let mut lower = Plane::default().with_transform(translation(0., -1., 0.));
         lower.material.reflective = 1.;
-        lower.transform = translation(0., -1., 0.);
         w.objects.push(lower.into());
-        let mut upper = Plane::new();
+        let mut upper = Plane::default().with_transform(translation(0., 1., 0.));
         upper.material.reflective = 1.;
-        upper.transform = translation(0., 1., 0.);
         w.objects.push(upper.into());
         let r = Ray::new(Point::new(0., 0., 0.), Vector::new(0., 1., 0.));
         w.color_at(r, 1);
@@ -340,15 +334,13 @@ mod tests {
             .equal_approx(Color::new(0., 0.99888, 0.04725)));
 
         let mut w = World::default();
-        let mut floor = Plane::new();
-        floor.transform = translation(0., -1., 0.);
+        let mut floor = Plane::default().with_transform(translation(0., -1., 0.));
         floor.material.transparency = 0.5;
         floor.material.refractive_index = 1.5;
         w.objects.push(floor.into());
-        let mut ball = Sphere::new();
+        let mut ball = Sphere::default().with_transform(translation(0., -3.5, -0.5));
         ball.material.color = Color::new(1., 0., 0.);
         ball.material.ambient = 0.5;
-        ball.transform = translation(0., -3.5, -0.5);
         w.objects.push(ball.into());
         let r = Ray::new(
             Point::new(0., 0., -3.),
@@ -361,16 +353,14 @@ mod tests {
             .equal_approx(Color::new(0.93642, 0.68642, 0.68642)));
 
         let mut w = World::default();
-        let mut floor = Plane::new();
-        floor.transform = translation(0., -1., 0.);
+        let mut floor = Plane::default().with_transform(translation(0., -1., 0.));
         floor.material.reflective = 0.5;
         floor.material.transparency = 0.5;
         floor.material.refractive_index = 1.5;
         w.objects.push(floor.into());
-        let mut ball = Sphere::new();
+        let mut ball = Sphere::default().with_transform(translation(0., -3.5, -0.5));
         ball.material.color = Color::new(1., 0., 0.);
         ball.material.ambient = 0.5;
-        ball.transform = translation(0., -3.5, -0.5);
         w.objects.push(ball.into());
         let r = Ray::new(
             Point::new(0., 0., -3.),

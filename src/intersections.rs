@@ -182,11 +182,11 @@ mod tests {
 
     #[test]
     fn intersections_sphere() {
-        let s = Sphere::new();
+        let s = Sphere::default();
         let i = Intersection::new(3.5, s.into());
         assert!(i.object() == Shape::Sphere(s));
 
-        let s = Sphere::new();
+        let s = Sphere::default();
         let i1 = Intersection::new(1., s.into());
         let i2 = Intersection::new(2., s.into());
         let xs = Intersections::from(vec![i1, i2]);
@@ -194,25 +194,25 @@ mod tests {
         assert!(xs[0].t == 1.);
         assert!(xs[1].t == 2.);
 
-        let s = Sphere::new();
+        let s = Sphere::default();
         let i1 = Intersection::new(1., s.into());
         let i2 = Intersection::new(2., s.into());
         let xs = Intersections::from(vec![i2, i1]);
         assert!(xs.hit().unwrap() == i1);
 
-        let s = Sphere::new();
+        let s = Sphere::default();
         let i1 = Intersection::new(-1., s.into());
         let i2 = Intersection::new(2., s.into());
         let xs = Intersections::from(vec![i2, i1]);
         assert!(xs.hit().unwrap() == i2);
 
-        let s = Sphere::new();
+        let s = Sphere::default();
         let i1 = Intersection::new(-2., s.into());
         let i2 = Intersection::new(-1., s.into());
         let xs = Intersections::from(vec![i2, i1]);
         assert!(xs.hit().is_none());
 
-        let s = Sphere::new();
+        let s = Sphere::default();
         let i1 = Intersection::new(5., s.into());
         let i2 = Intersection::new(7., s.into());
         let i3 = Intersection::new(-3., s.into());
@@ -224,7 +224,7 @@ mod tests {
     #[test]
     fn intersection_precomputation() {
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
-        let shape = Sphere::new();
+        let shape = Sphere::default();
         let i = Intersection::new(4.0, shape.into());
         let comps = Computations::prepare(i, r, &vec![].into());
         assert!(comps.point == Point::new(0., 0., -1.));
@@ -233,7 +233,7 @@ mod tests {
         assert!(comps.inside == false);
 
         let r = Ray::new(Point::new(0., 0., 0.), Vector::new(0., 0., 1.));
-        let shape = Sphere::new();
+        let shape = Sphere::default();
         let i = Intersection::new(1.0, shape.into());
         let comps = Computations::prepare(i, r, &vec![].into());
         assert!(comps.point == Point::new(0., 0., 1.));
@@ -245,16 +245,14 @@ mod tests {
     #[test]
     fn intersection_offset() {
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
-        let mut s = Sphere::new();
-        s.transform = translation(0., 0., 1.);
+        let s = Sphere::default().with_transform(translation(0., 0., 1.));
         let i = Intersection::new(5., s.into());
         let comps = Computations::prepare(i, r, &vec![].into());
         assert!(comps.over_point.z() < -Computations::EPSILON / 2.);
         assert!(comps.point.z() > comps.over_point.z());
 
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
-        let mut shape = Sphere::new();
-        shape.transform = translation(0., 0., -1.);
+        let mut shape = Sphere::default().with_transform(translation(0., 0., -1.));
         shape.material.transparency = 1.;
         shape.material.refractive_index = 1.5;
         let i = Intersection::new(5., shape.into());
@@ -266,7 +264,7 @@ mod tests {
 
     #[test]
     fn reflection_vector() {
-        let p = Plane::new();
+        let p = Plane::default();
         let r = Ray::new(
             Point::new(0., 1., -1.),
             Vector::new(0., -f32::sqrt(2.) / 2., f32::sqrt(2.) / 2.),
@@ -278,18 +276,15 @@ mod tests {
 
     #[test]
     fn refraction_at_intersections() {
-        let mut a = Sphere::new();
-        a.transform = scaling(2., 2., 2.);
+        let mut a = Sphere::default().with_transform(scaling(2., 2., 2.));
         a.material.transparency = 1.;
         a.material.refractive_index = 1.5;
 
-        let mut b = Sphere::new();
-        b.transform = translation(0., 0., -0.25);
+        let mut b = Sphere::default().with_transform(translation(0., 0., -0.25));
         b.material.transparency = 1.;
         b.material.refractive_index = 2.;
 
-        let mut c = Sphere::new();
-        c.transform = translation(0., 0., 0.25);
+        let mut c = Sphere::default().with_transform(translation(0., 0., 0.25));
         c.material.transparency = 1.;
         c.material.refractive_index = 2.5;
 
@@ -321,7 +316,7 @@ mod tests {
 
     #[test]
     fn fresnel_effect() {
-        let mut shape = Sphere::new();
+        let mut shape = Sphere::default();
         shape.material.transparency = 1.;
         shape.material.refractive_index = 1.5;
         let r = Ray::new(
@@ -336,7 +331,7 @@ mod tests {
         let comps = Computations::prepare(xs[1], r, &xs);
         assert!(comps.schlick() == 1.);
 
-        let mut shape = Sphere::new();
+        let mut shape = Sphere::default();
         shape.material.transparency = 1.;
         shape.material.refractive_index = 1.5;
         let r = Ray::new(Point::new(0., 0., 0.), Vector::new(0., 1., 0.));
@@ -348,7 +343,7 @@ mod tests {
         let comps = Computations::prepare(xs[1], r, &xs);
         assert!((comps.schlick() - 0.04).abs() < Computations::EPSILON);
 
-        let mut shape = Sphere::new();
+        let mut shape = Sphere::default();
         shape.material.transparency = 1.;
         shape.material.refractive_index = 1.5;
         let r = Ray::new(Point::new(0., 0.99, -2.), Vector::new(0., 0., 1.));
