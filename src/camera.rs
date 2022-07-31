@@ -109,7 +109,7 @@ mod tests {
             .equal_approx(Vector::new(0.66519, 0.33259, -0.66851)));
 
         let mut c = Camera::new(201, 101, PI / 2.);
-        c.transform = Transform::new()
+        c.transform = Transform::default()
             .translation(0., -2., 5.)
             .rotation_y(PI / 4.)
             .into();

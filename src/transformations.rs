@@ -60,10 +60,6 @@ pub fn shearing(x_y: f32, x_z: f32, y_x: f32, y_z: f32, z_x: f32, z_y: f32) -> M
 pub struct Transform(Matrix<4, 4>);
 
 impl Transform {
-    pub fn new() -> Self {
-        Self(Matrix::identity())
-    }
-
     pub fn translation(mut self, x: f32, y: f32, z: f32) -> Self {
         self.0 = translation(x, y, z) * self.0;
         self
@@ -97,7 +93,7 @@ impl Transform {
 
 impl Default for Transform {
     fn default() -> Self {
-        Self::new()
+        Self(Matrix::identity())
     }
 }
 
@@ -226,7 +222,7 @@ mod tests {
         assert!(p4.equal_approx(Point::new(15., 0., 7.)));
 
         let p = Point::new(1., 0., 1.);
-        let t = Transform::new()
+        let t = Transform::default()
             .rotation_x(PI / 2.)
             .scaling(5., 5., 5.)
             .translation(10., 5., 7.);

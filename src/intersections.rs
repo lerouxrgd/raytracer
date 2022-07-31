@@ -123,7 +123,7 @@ impl Computations {
         for x in xs.iter() {
             if x == &intersection {
                 if let Some(shape) = containers.last() {
-                    n1 = shape.material().refractive_index;
+                    n1 = shape.get_material().refractive_index;
                 }
             }
             if let Some(i) = containers.iter().position(|shape| shape == &x.shape) {
@@ -133,7 +133,7 @@ impl Computations {
             }
             if x == &intersection {
                 if let Some(shape) = containers.last() {
-                    n2 = shape.material().refractive_index;
+                    n2 = shape.get_material().refractive_index;
                 }
             }
         }
@@ -174,6 +174,7 @@ impl Computations {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::materials::Material;
     use crate::shapes::*;
     use crate::transformations::*;
 
@@ -249,9 +250,9 @@ mod tests {
         assert!(comps.point.z() > comps.over_point.z());
 
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
-        let mut shape = Sphere::default().with_transform(translation(0., 0., -1.));
-        shape.material.transparency = 1.;
-        shape.material.refractive_index = 1.5;
+        let shape = Sphere::default()
+            .with_transform(translation(0., 0., -1.))
+            .with_material(Material::default().transparency(1.).refractive_index(1.5));
         let i = Intersection::new(5., shape.into());
         let xs = vec![Intersection::new(5., shape.into())].into();
         let comps = Computations::prepare(i, r, &xs);
@@ -273,17 +274,17 @@ mod tests {
 
     #[test]
     fn refraction_at_intersections() {
-        let mut a = Sphere::default().with_transform(scaling(2., 2., 2.));
-        a.material.transparency = 1.;
-        a.material.refractive_index = 1.5;
+        let a = Sphere::default()
+            .with_transform(scaling(2., 2., 2.))
+            .with_material(Material::default().transparency(1.).refractive_index(1.5));
 
-        let mut b = Sphere::default().with_transform(translation(0., 0., -0.25));
-        b.material.transparency = 1.;
-        b.material.refractive_index = 2.;
+        let b = Sphere::default()
+            .with_transform(translation(0., 0., -0.25))
+            .with_material(Material::default().transparency(1.).refractive_index(2.));
 
-        let mut c = Sphere::default().with_transform(translation(0., 0., 0.25));
-        c.material.transparency = 1.;
-        c.material.refractive_index = 2.5;
+        let c = Sphere::default()
+            .with_transform(translation(0., 0., 0.25))
+            .with_material(Material::default().transparency(1.).refractive_index(2.5));
 
         let r = Ray::new(Point::new(0., 0., -4.), Vector::new(0., 0., 1.));
         let xs: Intersections = vec![
@@ -313,9 +314,8 @@ mod tests {
 
     #[test]
     fn fresnel_effect() {
-        let mut shape = Sphere::default();
-        shape.material.transparency = 1.;
-        shape.material.refractive_index = 1.5;
+        let shape = Sphere::default()
+            .with_material(Material::default().transparency(1.).refractive_index(1.5));
         let r = Ray::new(
             Point::new(0., 0., f32::sqrt(2.) / 2.),
             Vector::new(0., 1., 0.),
@@ -328,9 +328,8 @@ mod tests {
         let comps = Computations::prepare(xs[1], r, &xs);
         assert!(comps.schlick() == 1.);
 
-        let mut shape = Sphere::default();
-        shape.material.transparency = 1.;
-        shape.material.refractive_index = 1.5;
+        let shape = Sphere::default()
+            .with_material(Material::default().transparency(1.).refractive_index(1.5));
         let r = Ray::new(Point::new(0., 0., 0.), Vector::new(0., 1., 0.));
         let xs: Intersections = vec![
             Intersection::new(-1., shape.into()),
@@ -340,9 +339,8 @@ mod tests {
         let comps = Computations::prepare(xs[1], r, &xs);
         assert!((comps.schlick() - 0.04).abs() < Computations::EPSILON);
 
-        let mut shape = Sphere::default();
-        shape.material.transparency = 1.;
-        shape.material.refractive_index = 1.5;
+        let shape = Sphere::default()
+            .with_material(Material::default().transparency(1.).refractive_index(1.5));
         let r = Ray::new(Point::new(0., 0.99, -2.), Vector::new(0., 0., 1.));
         let xs: Intersections = vec![Intersection::new(1.8589, shape.into())].into();
         let comps = Computations::prepare(xs[0], r, &xs);

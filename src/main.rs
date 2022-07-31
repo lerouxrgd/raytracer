@@ -2,75 +2,84 @@ use std::f32::consts::PI;
 
 use raytracer::camera::Camera;
 use raytracer::lights::PointLight;
+use raytracer::materials::Material;
 use raytracer::patterns::*;
-use raytracer::shapes::{Plane, Sphere};
+use raytracer::shapes::Shape;
 use raytracer::transformations::*;
 use raytracer::tuples::{Color, Point, Vector};
 use raytracer::world::World;
 
 fn main() {
-    let mut floor = Plane::default().with_transform(
-        Transform::new()
-            .rotation_y(PI / 4.)
-            .scaling(0.4, 0.4, 0.4)
-            .into(),
-    );
-    let pattern = Checker::new(Color::white(), Color::black());
-    floor.material.pattern = pattern.into();
-    floor.material.color = Color::new(1., 0.9, 0.9);
-    floor.material.specular = 0.;
-    floor.material.reflective = 0.3;
+    let floor = Shape::plane()
+        .with_transform(
+            Transform::default()
+                .rotation_y(PI / 4.)
+                .scaling(0.4, 0.4, 0.4),
+        )
+        .with_material(
+            Material::default()
+                .pattern(Checker::new(Color::white(), Color::black()))
+                .color(Color::new(1., 0.9, 0.9))
+                .specular(0.)
+                .reflective(0.3),
+        );
 
-    let mut backdrop = Plane::default().with_transform(
-        Transform::new()
-            .rotation_x(PI / 2.)
-            .translation(0., 0., 5.)
-            .into(),
-    );
-    backdrop.material.color = Color::new(1., 0.9, 0.9);
-    backdrop.material.specular = 0.;
+    let backdrop = Shape::plane()
+        .with_transform(
+            Transform::default()
+                .rotation_x(PI / 2.)
+                .translation(0., 0., 5.),
+        )
+        .with_material(
+            Material::default()
+                .color(Color::new(1., 0.9, 0.9))
+                .specular(0.),
+        );
 
-    let mut middle = Sphere::default().with_transform(translation(-0.5, 1., 0.5));
-    middle.material.color = Color::new(0.1, 0.4, 0.9);
-    middle.material.diffuse = 0.7;
-    middle.material.specular = 0.3;
-    middle.material.reflective = 0.8;
+    let middle = Shape::sphere()
+        .with_transform(translation(-0.5, 1., 0.5))
+        .with_material(
+            Material::default()
+                .color(Color::new(0.1, 0.4, 0.9))
+                .diffuse(0.7)
+                .specular(0.3)
+                .reflective(0.8),
+        );
 
-    let mut right = Sphere::default().with_transform(
-        Transform::new()
-            .scaling(0.5, 0.5, 0.5)
-            .translation(1.5, 0.5, -0.5)
-            .into(),
-    );
-    right.material.color = Color::new(0.5, 1., 0.1);
-    right.material.diffuse = 0.7;
-    right.material.specular = 0.3;
+    let right = Shape::sphere()
+        .with_transform(
+            Transform::default()
+                .scaling(0.5, 0.5, 0.5)
+                .translation(1.5, 0.5, -0.5),
+        )
+        .with_material(
+            Material::default()
+                .color(Color::new(0.5, 1., 0.1))
+                .diffuse(0.7)
+                .specular(0.3),
+        );
 
-    let mut left = Sphere::default().with_transform(
-        Transform::new()
-            .scaling(0.33, 0.33, 0.33)
-            .translation(-1.5, 0.33, -0.75)
-            .into(),
-    );
-    left.material.color = Color::new(1., 0.8, 0.1);
-    left.material.diffuse = 0.7;
-    left.material.specular = 0.3;
+    let left = Shape::sphere()
+        .with_transform(
+            Transform::default()
+                .scaling(0.33, 0.33, 0.33)
+                .translation(-1.5, 0.33, -0.75),
+        )
+        .with_material(
+            Material::default()
+                .color(Color::new(1., 0.8, 0.1))
+                .diffuse(0.7)
+                .specular(0.3),
+        );
 
-    let shapes = vec![
-        floor.into(),
-        backdrop.into(),
-        middle.into(),
-        right.into(),
-        left.into(),
-    ];
+    let shapes = vec![floor, backdrop, middle, right, left];
 
     let groups = vec![
         // //
         // raytracer::groups::hexagon(
-        //     Transform::new()
+        //     Transform::default()
         //         .rotation_x(PI / 3.0)
-        //         .translation(0.0, 0.75, 0.0)
-        //         .into(),
+        //         .translation(0.0, 0.75, 0.0),
         // ),
     ];
 

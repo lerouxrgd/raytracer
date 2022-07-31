@@ -40,21 +40,23 @@ unsafe impl slotmap::Key for Group {
 }
 
 impl Group {
-    pub fn with_transform(self, transform: Matrix<4, 4>) -> Self {
+    pub fn with_transform<T: Into<Matrix<4, 4>>>(self, transform: T) -> Self {
         let mut groups = GROUPS.write().unwrap();
         let group = groups.get_mut(self).unwrap();
-        group.transform = transform;
+        group.transform = transform.into();
         self
     }
 
-    pub fn delete(self) {
+    pub fn get_transform(&self) -> Matrix<4, 4> {
+        let groups = GROUPS.read().unwrap();
+        let group = groups.get(*self).unwrap();
+        group.transform
+    }
+
+    pub fn set_transform<T: Into<Matrix<4, 4>>>(&mut self, t: T) {
         let mut groups = GROUPS.write().unwrap();
-        let group = groups.get_mut(self).unwrap();
-        let children = mem::take(&mut group.children);
-        for child in children {
-            groups.remove(child);
-        }
-        groups.remove(self);
+        let group = groups.get_mut(*self).unwrap();
+        group.transform = t.into();
     }
 
     pub fn add_child(&mut self, child: Group) {
@@ -118,12 +120,6 @@ impl Group {
         intersections.extend(self.local_intersect(local_ray));
     }
 
-    pub fn transform(&self) -> Matrix<4, 4> {
-        let groups = GROUPS.read().unwrap();
-        let group = groups.get(*self).unwrap();
-        group.transform
-    }
-
     pub fn parent(&self) -> Group {
         let groups = GROUPS.read().unwrap();
         let group = groups.get(*self).unwrap();
@@ -137,7 +133,7 @@ impl Group {
         } else {
             point
         };
-        self.transform().inverse().unwrap() * point
+        self.get_transform().inverse().unwrap() * point
     }
 
     pub fn normal_to_world(&self, normal: Vector) -> Vector {
@@ -156,6 +152,16 @@ impl Group {
             normal
         }
     }
+
+    pub fn delete(self) {
+        let mut groups = GROUPS.write().unwrap();
+        let group = groups.get_mut(self).unwrap();
+        let children = mem::take(&mut group.children);
+        for child in children {
+            groups.remove(child);
+        }
+        groups.remove(self);
+    }
 }
 
 impl Default for Group {
@@ -171,30 +177,29 @@ impl Default for Group {
     }
 }
 
-pub fn hexagon(transform: Matrix<4, 4>) -> Group {
+pub fn hexagon<T: Into<Matrix<4, 4>>>(transform: T) -> Group {
     fn hexagon_corner() -> Shape {
         Sphere::default()
             .with_transform(
-                Transform::new()
+                Transform::default()
                     .scaling(0.25, 0.25, 0.25)
-                    .translation(0., 0., -1.)
-                    .into(),
+                    .translation(0., 0., -1.),
             )
             .into()
     }
 
     fn hexagon_edge() -> Shape {
-        let mut edge = Cylinder::default().with_transform(
-            Transform::new()
-                .scaling(0.25, 1., 0.25)
-                .rotation_z(-PI / 2.)
-                .rotation_y(-PI / 6.)
-                .translation(0., 0., -1.)
-                .into(),
-        );
-        edge.min = 0.;
-        edge.max = 1.;
-        edge.into()
+        Cylinder::default()
+            .with_transform(
+                Transform::default()
+                    .scaling(0.25, 1., 0.25)
+                    .rotation_z(-PI / 2.)
+                    .rotation_y(-PI / 6.)
+                    .translation(0., 0., -1.),
+            )
+            .min(0.)
+            .max(1.)
+            .into()
     }
 
     fn hexagon_side(rot_y: Matrix<4, 4>) -> Group {
