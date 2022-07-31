@@ -32,6 +32,53 @@ impl Default for Material {
     }
 }
 
+impl Material {
+    pub fn pattern<P: Into<Pattern>>(mut self, pattern: P) -> Self {
+        self.pattern = Some(pattern.into());
+        self
+    }
+
+    pub fn color(mut self, color: Color) -> Self {
+        self.color = color;
+        self
+    }
+
+    pub fn ambient(mut self, ambient: f32) -> Self {
+        self.ambient = ambient;
+        self
+    }
+
+    pub fn diffuse(mut self, diffuse: f32) -> Self {
+        self.diffuse = diffuse;
+        self
+    }
+
+    pub fn specular(mut self, specular: f32) -> Self {
+        self.specular = specular;
+        self
+    }
+
+    pub fn shininess(mut self, shininess: f32) -> Self {
+        self.shininess = shininess;
+        self
+    }
+
+    pub fn reflective(mut self, reflective: f32) -> Self {
+        self.reflective = reflective;
+        self
+    }
+
+    pub fn transparency(mut self, transparency: f32) -> Self {
+        self.transparency = transparency;
+        self
+    }
+
+    pub fn refractive_index(mut self, refractive_index: f32) -> Self {
+        self.refractive_index = refractive_index;
+        self
+    }
+}
+
 pub fn lighting(
     material: Material,
     shape: Shape,

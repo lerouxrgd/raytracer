@@ -1,7 +1,7 @@
 use crate::groups::Group;
 use crate::intersections::{Computations, Intersections};
 use crate::lights::PointLight;
-use crate::materials::lighting;
+use crate::materials::{lighting, Material};
 use crate::rays::Ray;
 use crate::shapes::{Shape, Sphere};
 use crate::transformations::scaling;
@@ -18,10 +18,12 @@ impl Default for World {
     fn default() -> Self {
         let light = PointLight::new(Point::new(-10., 10., -10.), Color::white());
 
-        let mut s1 = Sphere::default();
-        s1.material.color = Color::new(0.8, 1., 0.6);
-        s1.material.diffuse = 0.7;
-        s1.material.specular = 0.2;
+        let s1 = Sphere::default().with_material(
+            Material::default()
+                .color(Color::new(0.8, 1., 0.6))
+                .diffuse(0.7)
+                .specular(0.2),
+        );
 
         let s2 = Sphere::default().with_transform(scaling(0.5, 0.5, 0.5));
 
@@ -52,7 +54,7 @@ impl World {
     pub fn shade_hit(&self, comps: Computations, remaining: u8) -> Color {
         let shadowed = self.is_shadowed(comps.over_point);
         let surface = lighting(
-            comps.shape.material(),
+            comps.shape.get_material(),
             comps.shape,
             self.light,
             comps.over_point,
@@ -64,7 +66,7 @@ impl World {
         let reflected = self.reflected_color(comps, remaining);
         let refracted = self.refracted_color(comps, remaining);
 
-        let material = comps.shape.material();
+        let material = comps.shape.get_material();
         if material.reflective > 0. && material.transparency > 0. {
             let reflectance = comps.schlick();
             surface + reflected * reflectance + refracted * (1. - reflectance)
@@ -100,13 +102,13 @@ impl World {
             return Color::black();
         }
 
-        if comps.shape.material().reflective == 0. {
+        if comps.shape.get_material().reflective == 0. {
             return Color::black();
         }
 
         let reflect_ray = Ray::new(comps.over_point, comps.reflectv);
         let color = self.color_at(reflect_ray, remaining - 1);
-        color * comps.shape.material().reflective
+        color * comps.shape.get_material().reflective
     }
 
     pub fn refracted_color(&self, comps: Computations, remaining: u8) -> Color {
@@ -114,7 +116,7 @@ impl World {
             return Color::black();
         }
 
-        if comps.shape.material().transparency == 0. {
+        if comps.shape.get_material().transparency == 0. {
             return Color::black();
         }
 
@@ -129,7 +131,7 @@ impl World {
         let cos_t = (1. - sin2_t).sqrt();
         let direction = (n_ratio * cos_i - cos_t) * comps.normalv - n_ratio * comps.eyev;
         let refracted_ray = Ray::new(comps.under_point, direction);
-        self.color_at(refracted_ray, remaining - 1) * comps.shape.material().transparency
+        self.color_at(refracted_ray, remaining - 1) * comps.shape.get_material().transparency
     }
 }
 
@@ -193,7 +195,9 @@ mod tests {
         w.shapes[0].material_mut().ambient = 1.0;
         w.shapes[1].material_mut().ambient = 1.0;
         let r = Ray::new(Point::new(0., 0., 0.75), Vector::new(0., 0., -1.));
-        assert!(w.color_at(r, 1).equal_approx(w.shapes[1].material().color));
+        assert!(w
+            .color_at(r, 1)
+            .equal_approx(w.shapes[1].get_material().color));
 
         let mut w = World::default();
         w.light = PointLight::new(Point::new(0., 0., -10.), Color::white());
@@ -237,8 +241,9 @@ mod tests {
         assert!(w.reflected_color(comps, 1) == Color::black());
 
         let mut w = World::default();
-        let mut shape = Plane::default().with_transform(translation(0., -1., 0.));
-        shape.material.reflective = 0.5;
+        let shape = Plane::default()
+            .with_transform(translation(0., -1., 0.))
+            .with_material(Material::default().reflective(0.5));
         w.shapes.push(shape.into());
         let r = Ray::new(
             Point::new(0., 0., -3.),
@@ -251,8 +256,9 @@ mod tests {
             .equal_approx(Color::new(0.19032, 0.2379, 0.14274)));
 
         let mut w = World::default();
-        let mut shape = Plane::default().with_transform(translation(0., -1., 0.));
-        shape.material.reflective = 0.5;
+        let shape = Plane::default()
+            .with_transform(translation(0., -1., 0.))
+            .with_material(Material::default().reflective(0.5));
         w.shapes.push(shape.into());
         let r = Ray::new(
             Point::new(0., 0., -3.),
@@ -266,11 +272,13 @@ mod tests {
 
         let mut w = World::default();
         w.light = PointLight::new(Point::new(0., 0., 0.), Color::white());
-        let mut lower = Plane::default().with_transform(translation(0., -1., 0.));
-        lower.material.reflective = 1.;
+        let lower = Plane::default()
+            .with_transform(translation(0., -1., 0.))
+            .with_material(Material::default().reflective(1.));
         w.shapes.push(lower.into());
-        let mut upper = Plane::default().with_transform(translation(0., 1., 0.));
-        upper.material.reflective = 1.;
+        let upper = Plane::default()
+            .with_transform(translation(0., 1., 0.))
+            .with_material(Material::default().reflective(1.));
         w.shapes.push(upper.into());
         let r = Ray::new(Point::new(0., 0., 0.), Vector::new(0., 1., 0.));
         w.color_at(r, 1);
@@ -334,13 +342,17 @@ mod tests {
             .equal_approx(Color::new(0., 0.99888, 0.04725)));
 
         let mut w = World::default();
-        let mut floor = Plane::default().with_transform(translation(0., -1., 0.));
-        floor.material.transparency = 0.5;
-        floor.material.refractive_index = 1.5;
+        let floor = Plane::default()
+            .with_transform(translation(0., -1., 0.))
+            .with_material(Material::default().transparency(0.5).refractive_index(1.5));
         w.shapes.push(floor.into());
-        let mut ball = Sphere::default().with_transform(translation(0., -3.5, -0.5));
-        ball.material.color = Color::new(1., 0., 0.);
-        ball.material.ambient = 0.5;
+        let ball = Sphere::default()
+            .with_transform(translation(0., -3.5, -0.5))
+            .with_material(
+                Material::default()
+                    .color(Color::new(1., 0., 0.))
+                    .ambient(0.5),
+            );
         w.shapes.push(ball.into());
         let r = Ray::new(
             Point::new(0., 0., -3.),
@@ -353,14 +365,22 @@ mod tests {
             .equal_approx(Color::new(0.93642, 0.68642, 0.68642)));
 
         let mut w = World::default();
-        let mut floor = Plane::default().with_transform(translation(0., -1., 0.));
-        floor.material.reflective = 0.5;
-        floor.material.transparency = 0.5;
-        floor.material.refractive_index = 1.5;
+        let floor = Plane::default()
+            .with_transform(translation(0., -1., 0.))
+            .with_material(
+                Material::default()
+                    .reflective(0.5)
+                    .transparency(0.5)
+                    .refractive_index(1.5),
+            );
         w.shapes.push(floor.into());
-        let mut ball = Sphere::default().with_transform(translation(0., -3.5, -0.5));
-        ball.material.color = Color::new(1., 0., 0.);
-        ball.material.ambient = 0.5;
+        let ball = Sphere::default()
+            .with_transform(translation(0., -3.5, -0.5))
+            .with_material(
+                Material::default()
+                    .color(Color::new(1., 0., 0.))
+                    .ambient(0.5),
+            );
         w.shapes.push(ball.into());
         let r = Ray::new(
             Point::new(0., 0., -3.),

@@ -21,7 +21,32 @@ pub enum Shape {
 }
 
 impl Shape {
-    pub fn transform(&self) -> Matrix<4, 4> {
+    pub fn sphere() -> Self {
+        Sphere::default().into()
+    }
+
+    pub fn plane() -> Self {
+        Plane::default().into()
+    }
+
+    pub fn cube() -> Self {
+        Cube::default().into()
+    }
+
+    pub fn cylinder() -> Self {
+        Cylinder::default().into()
+    }
+
+    pub fn cone() -> Self {
+        Cone::default().into()
+    }
+
+    pub fn with_transform<T: Into<Matrix<4, 4>>>(mut self, transform: T) -> Self {
+        self.set_transform(transform.into());
+        self
+    }
+
+    pub fn get_transform(&self) -> Matrix<4, 4> {
         match self {
             &Self::Sphere(Sphere { transform, .. })
             | &Self::Plane(Plane { transform, .. })
@@ -31,7 +56,32 @@ impl Shape {
         }
     }
 
-    pub fn material(&self) -> Material {
+    pub fn set_transform<T: Into<Matrix<4, 4>>>(&mut self, t: T) {
+        match self {
+            Self::Sphere(Sphere {
+                ref mut transform, ..
+            })
+            | Self::Plane(Plane {
+                ref mut transform, ..
+            })
+            | Self::Cylinder(Cylinder {
+                ref mut transform, ..
+            })
+            | Self::Cone(Cone {
+                ref mut transform, ..
+            })
+            | Self::Cube(Cube {
+                ref mut transform, ..
+            }) => *transform = t.into(),
+        }
+    }
+
+    pub fn with_material(mut self, material: Material) -> Self {
+        self.set_material(material);
+        self
+    }
+
+    pub fn get_material(&self) -> Material {
         match self {
             &Self::Sphere(Sphere { material, .. })
             | &Self::Plane(Plane { material, .. })
@@ -41,6 +91,27 @@ impl Shape {
         }
     }
 
+    pub fn set_material(&mut self, m: Material) {
+        match self {
+            Self::Sphere(Sphere {
+                ref mut material, ..
+            })
+            | Self::Plane(Plane {
+                ref mut material, ..
+            })
+            | Self::Cylinder(Cylinder {
+                ref mut material, ..
+            })
+            | Self::Cone(Cone {
+                ref mut material, ..
+            })
+            | Self::Cube(Cube {
+                ref mut material, ..
+            }) => *material = m,
+        }
+    }
+
+    #[cfg(test)]
     pub fn material_mut(&mut self) -> &mut Material {
         match self {
             Self::Sphere(Sphere {
@@ -74,7 +145,7 @@ impl Shape {
     }
 
     pub fn intersect(&self, intersections: &mut Vec<Intersection>, world_ray: Ray) {
-        let inverse = self.transform().inverse().unwrap();
+        let inverse = self.get_transform().inverse().unwrap();
         let local_ray = world_ray.transform(inverse);
         match self {
             Shape::Sphere(s) => {
@@ -133,11 +204,11 @@ impl Shape {
         } else {
             point
         };
-        self.transform().inverse().unwrap() * point
+        self.get_transform().inverse().unwrap() * point
     }
 
     pub fn normal_to_world(&self, normal: Vector) -> Vector {
-        let inverse = self.transform().inverse().unwrap();
+        let inverse = self.get_transform().inverse().unwrap();
         let normal = Tuple::from(inverse.transpose() * normal);
         let normal = Vector::new(normal[0], normal[1], normal[2]);
         let normal = normal.normalize();
@@ -215,15 +286,36 @@ impl From<&Cone> for Shape {
 #[derivative(PartialEq)]
 pub struct Sphere {
     transform: Matrix<4, 4>,
-    pub material: Material,
+    material: Material,
     #[derivative(PartialEq = "ignore")]
     parent: Group,
 }
 
 impl Sphere {
-    pub fn with_transform(mut self, transform: Matrix<4, 4>) -> Self {
-        self.transform = transform;
+    pub fn with_transform<T: Into<Matrix<4, 4>>>(mut self, transform: T) -> Self {
+        self.transform = transform.into();
         self
+    }
+
+    pub fn get_transform(&self) -> Matrix<4, 4> {
+        self.transform
+    }
+
+    pub fn set_transform<T: Into<Matrix<4, 4>>>(&mut self, t: T) {
+        self.transform = t.into()
+    }
+
+    pub fn with_material(mut self, material: Material) -> Self {
+        self.material = material;
+        self
+    }
+
+    pub fn get_material(&self) -> Material {
+        self.material
+    }
+
+    pub fn set_material(&mut self, m: Material) {
+        self.material = m
     }
 
     pub fn local_intersect(&self, local_ray: Ray) -> Option<[Intersection; 2]> {
@@ -264,7 +356,7 @@ impl Default for Sphere {
 #[derivative(PartialEq)]
 pub struct Plane {
     transform: Matrix<4, 4>,
-    pub material: Material,
+    material: Material,
     #[derivative(PartialEq = "ignore")]
     parent: Group,
 }
@@ -272,9 +364,30 @@ pub struct Plane {
 impl Plane {
     pub const EPSILON: f32 = 1e-4;
 
-    pub fn with_transform(mut self, transform: Matrix<4, 4>) -> Self {
-        self.transform = transform;
+    pub fn with_transform<T: Into<Matrix<4, 4>>>(mut self, transform: T) -> Self {
+        self.transform = transform.into();
         self
+    }
+
+    pub fn get_transform(&self) -> Matrix<4, 4> {
+        self.transform
+    }
+
+    pub fn set_transform<T: Into<Matrix<4, 4>>>(&mut self, t: T) {
+        self.transform = t.into()
+    }
+
+    pub fn with_material(mut self, material: Material) -> Self {
+        self.material = material;
+        self
+    }
+
+    pub fn get_material(&self) -> Material {
+        self.material
+    }
+
+    pub fn set_material(&mut self, m: Material) {
+        self.material = m
     }
 
     pub fn local_intersect(&self, local_ray: Ray) -> Option<Intersection> {
@@ -306,7 +419,7 @@ impl Default for Plane {
 #[derivative(PartialEq)]
 pub struct Cube {
     transform: Matrix<4, 4>,
-    pub material: Material,
+    material: Material,
     #[derivative(PartialEq = "ignore")]
     parent: Group,
 }
@@ -314,9 +427,30 @@ pub struct Cube {
 impl Cube {
     pub const EPSILON: f32 = 1e-4;
 
-    pub fn with_transform(mut self, transform: Matrix<4, 4>) -> Self {
-        self.transform = transform;
+    pub fn with_transform<T: Into<Matrix<4, 4>>>(mut self, transform: T) -> Self {
+        self.transform = transform.into();
         self
+    }
+
+    pub fn get_transform(&self) -> Matrix<4, 4> {
+        self.transform
+    }
+
+    pub fn set_transform<T: Into<Matrix<4, 4>>>(&mut self, t: T) {
+        self.transform = t.into()
+    }
+
+    pub fn with_material(mut self, material: Material) -> Self {
+        self.material = material;
+        self
+    }
+
+    pub fn get_material(&self) -> Material {
+        self.material
+    }
+
+    pub fn set_material(&mut self, m: Material) {
+        self.material = m
     }
 
     fn check_axis(origin: f32, direction: f32) -> (f32, f32) {
@@ -394,15 +528,17 @@ impl Default for Cube {
     }
 }
 
+// TODO: fluent builder for other params
+
 /// Infinite cynlinder of radius 1 along the y axis
 #[derive(Debug, Clone, Copy, Derivative)]
 #[derivative(PartialEq)]
 pub struct Cylinder {
     transform: Matrix<4, 4>,
-    pub material: Material,
-    pub min: f32,
-    pub max: f32,
-    pub closed: bool,
+    material: Material,
+    min: f32,
+    max: f32,
+    closed: bool,
     #[derivative(PartialEq = "ignore")]
     parent: Group,
 }
@@ -410,8 +546,44 @@ pub struct Cylinder {
 impl Cylinder {
     pub const EPSILON: f32 = 1e-4;
 
-    pub fn with_transform(mut self, transform: Matrix<4, 4>) -> Self {
-        self.transform = transform;
+    pub fn with_transform<T: Into<Matrix<4, 4>>>(mut self, transform: T) -> Self {
+        self.transform = transform.into();
+        self
+    }
+
+    pub fn get_transform(&self) -> Matrix<4, 4> {
+        self.transform
+    }
+
+    pub fn set_transform<T: Into<Matrix<4, 4>>>(&mut self, t: T) {
+        self.transform = t.into()
+    }
+
+    pub fn with_material(mut self, material: Material) -> Self {
+        self.material = material;
+        self
+    }
+
+    pub fn get_material(&self) -> Material {
+        self.material
+    }
+
+    pub fn set_material(&mut self, m: Material) {
+        self.material = m
+    }
+
+    pub fn min(mut self, min: f32) -> Self {
+        self.min = min;
+        self
+    }
+
+    pub fn max(mut self, max: f32) -> Self {
+        self.max = max;
+        self
+    }
+
+    pub fn closed(mut self, closed: bool) -> Self {
+        self.closed = closed;
         self
     }
 
@@ -512,15 +684,17 @@ impl Default for Cylinder {
     }
 }
 
+// TODO: fluent builder for other params
+
 /// A double-napped cone along the y axis
 #[derive(Debug, Clone, Copy, Derivative)]
 #[derivative(PartialEq)]
 pub struct Cone {
     transform: Matrix<4, 4>,
-    pub material: Material,
-    pub min: f32,
-    pub max: f32,
-    pub closed: bool,
+    material: Material,
+    min: f32,
+    max: f32,
+    closed: bool,
     #[derivative(PartialEq = "ignore")]
     parent: Group,
 }
@@ -528,8 +702,44 @@ pub struct Cone {
 impl Cone {
     pub const EPSILON: f32 = 1e-4;
 
-    pub fn with_transform(mut self, transform: Matrix<4, 4>) -> Self {
-        self.transform = transform;
+    pub fn with_transform<T: Into<Matrix<4, 4>>>(mut self, transform: T) -> Self {
+        self.transform = transform.into();
+        self
+    }
+
+    pub fn get_transform(&self) -> Matrix<4, 4> {
+        self.transform
+    }
+
+    pub fn set_transform<T: Into<Matrix<4, 4>>>(&mut self, t: T) {
+        self.transform = t.into()
+    }
+
+    pub fn with_material(mut self, material: Material) -> Self {
+        self.material = material;
+        self
+    }
+
+    pub fn get_material(&self) -> Material {
+        self.material
+    }
+
+    pub fn set_material(&mut self, m: Material) {
+        self.material = m
+    }
+
+    pub fn min(mut self, min: f32) -> Self {
+        self.min = min;
+        self
+    }
+
+    pub fn max(mut self, max: f32) -> Self {
+        self.max = max;
+        self
+    }
+
+    pub fn closed(mut self, closed: bool) -> Self {
+        self.closed = closed;
         self
     }
 
@@ -721,10 +931,9 @@ mod tests {
         assert!(n.equal_approx(Vector::new(0., 0.70711, -0.70711)));
 
         let s = Sphere::default().with_transform(
-            Transform::new()
+            Transform::default()
                 .rotation_z(PI / 5.)
-                .scaling(1., 0.5, 1.)
-                .into(),
+                .scaling(1., 0.5, 1.),
         );
         let p = Point::new(0., f32::sqrt(2.) / 2., -f32::sqrt(2.) / 2.);
         let n = Shape::Sphere(s).normal_at(p);
@@ -861,9 +1070,7 @@ mod tests {
             (Point::new(0., 1.5, -2.), Vector::new(0., 0., 1.), 2),
         ];
         for (origin, direction, count) in cases.into_iter() {
-            let mut c = Cylinder::default();
-            c.min = 1.;
-            c.max = 2.;
+            let c = Cylinder::default().min(1.).max(2.);
             let direction = direction.normalize();
             let r = Ray::new(origin, direction);
             assert!(c.local_intersect(r).into_iter().filter_map(|xs| xs).count() == count);
@@ -877,10 +1084,7 @@ mod tests {
             // (Point::new(0., -1., -2.), Vector::new(0., 1., 1.), 2),
         ];
         for (point, direction, count) in cases.into_iter() {
-            let mut c = Cylinder::default();
-            c.min = 1.;
-            c.max = 2.;
-            c.closed = true;
+            let c = Cylinder::default().min(1.).max(2.).closed(true);
             let direction = direction.normalize();
             let r = Ray::new(point, direction);
             assert!(c.local_intersect(r).into_iter().filter_map(|xs| xs).count() == count);
@@ -895,10 +1099,7 @@ mod tests {
             (Point::new(0., 2., 0.5), Vector::new(0., 1., 0.)),
         ];
         for (point, normal) in cases.into_iter() {
-            let mut c = Cylinder::default();
-            c.min = 1.;
-            c.max = 2.;
-            c.closed = true;
+            let c = Cylinder::default().min(1.).max(2.).closed(true);
             assert!(c.local_normal_at(point) == normal);
         }
     }
@@ -945,10 +1146,7 @@ mod tests {
             (Point::new(0., 0., -0.25), Vector::new(0., 1., 0.), 4),
         ];
         for (origin, direction, count) in cases.into_iter() {
-            let mut c = Cone::default();
-            c.min = -0.5;
-            c.max = 0.5;
-            c.closed = true;
+            let c = Cone::default().min(-0.5).max(0.5).closed(true);
             let direction = direction.normalize();
             let r = Ray::new(origin, direction);
             assert!(c.local_intersect(r).into_iter().filter_map(|xs| xs).count() == count);
