@@ -11,7 +11,7 @@ use crate::tuples::{Point, Vector};
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Intersection {
     t: OrderedFloat<f32>,
-    object: Shape,
+    shape: Shape,
 }
 
 impl Eq for Intersection {}
@@ -29,19 +29,16 @@ impl PartialOrd for Intersection {
 }
 
 impl Intersection {
-    pub fn new(t: f32, object: Shape) -> Self {
-        Self {
-            t: t.into(),
-            object,
-        }
+    pub fn new(t: f32, shape: Shape) -> Self {
+        Self { t: t.into(), shape }
     }
 
     pub fn t(&self) -> f32 {
         self.t.into()
     }
 
-    pub fn object(&self) -> Shape {
-        self.object
+    pub fn shape(&self) -> Shape {
+        self.shape
     }
 }
 
@@ -85,7 +82,7 @@ impl Intersections {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Computations {
     pub t: f32,
-    pub object: Shape,
+    pub shape: Shape,
     pub point: Point,
     pub over_point: Point,
     pub under_point: Point,
@@ -104,10 +101,10 @@ impl Computations {
         let world_point = ray.position(intersection.t());
 
         let t = intersection.t();
-        let object = intersection.object;
+        let shape = intersection.shape;
         let point = world_point;
         let eyev = -ray.direction;
-        let mut normalv = intersection.object.normal_at(world_point);
+        let mut normalv = intersection.shape.normal_at(world_point);
 
         let inside = if normalv.dot(eyev) < 0. {
             normalv = -normalv;
@@ -129,10 +126,10 @@ impl Computations {
                     n1 = shape.material().refractive_index;
                 }
             }
-            if let Some(i) = containers.iter().position(|shape| shape == &x.object) {
+            if let Some(i) = containers.iter().position(|shape| shape == &x.shape) {
                 containers.remove(i);
             } else {
-                containers.push(x.object);
+                containers.push(x.shape);
             }
             if x == &intersection {
                 if let Some(shape) = containers.last() {
@@ -143,7 +140,7 @@ impl Computations {
 
         Self {
             t,
-            object,
+            shape,
             point,
             over_point,
             under_point,
@@ -184,7 +181,7 @@ mod tests {
     fn intersections_sphere() {
         let s = Sphere::default();
         let i = Intersection::new(3.5, s.into());
-        assert!(i.object() == Shape::Sphere(s));
+        assert!(i.shape() == Shape::Sphere(s));
 
         let s = Sphere::default();
         let i1 = Intersection::new(1., s.into());

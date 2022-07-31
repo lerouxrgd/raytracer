@@ -654,8 +654,8 @@ mod tests {
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
         let s = Sphere::default();
         let xs = s.local_intersect(r);
-        assert!(xs.unwrap()[0].object() == Shape::Sphere(s));
-        assert!(xs.unwrap()[1].object() == Shape::Sphere(s));
+        assert!(xs.unwrap()[0].shape() == Shape::Sphere(s));
+        assert!(xs.unwrap()[1].shape() == Shape::Sphere(s));
 
         let r = Ray::new(Point::new(0., 0., -5.), Vector::new(0., 0., 1.));
         let s = Sphere::default();

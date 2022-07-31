@@ -237,10 +237,10 @@ mod tests {
         let xs = g.local_intersect(r);
         let xs = Vec::<Intersection>::from(Intersections::from(xs)); // sorted
         assert!(xs.len() == 4);
-        assert!(xs[0].object() == s2.into());
-        assert!(xs[1].object() == s2.into());
-        assert!(xs[2].object() == s1.into());
-        assert!(xs[3].object() == s1.into());
+        assert!(xs[0].shape() == s2.into());
+        assert!(xs[1].shape() == s2.into());
+        assert!(xs[2].shape() == s1.into());
+        assert!(xs[3].shape() == s1.into());
 
         let mut g = Group::default().with_transform(scaling(2., 2., 2.));
         let s = Sphere::default().with_transform(translation(5., 0., 0.));

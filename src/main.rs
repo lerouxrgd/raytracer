@@ -56,7 +56,7 @@ fn main() {
     left.material.diffuse = 0.7;
     left.material.specular = 0.3;
 
-    let objects = vec![
+    let shapes = vec![
         floor.into(),
         backdrop.into(),
         middle.into(),
@@ -75,7 +75,7 @@ fn main() {
     ];
 
     let world = World {
-        objects,
+        shapes,
         groups,
         light: PointLight::new(Point::new(-10., 10., -10.), Color::white()),
     };
