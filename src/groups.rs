@@ -69,6 +69,12 @@ impl Group {
         child.parent = *self;
     }
 
+    pub fn get_child(&self, i: usize) -> Group {
+        let groups = GROUPS.read().unwrap();
+        let group = groups.get(*self).unwrap();
+        group.children[i]
+    }
+
     pub fn add_shape(&mut self, mut shape: Shape) {
         let mut groups = GROUPS.write().unwrap();
         let group = groups.get_mut(*self).unwrap();
