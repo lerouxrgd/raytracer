@@ -166,7 +166,7 @@ mod tests {
 
         let s = Sphere::default().with_transform(translation(0., 1., 0.));
         let p = Point::new(0., 1.70711, -0.70711);
-        let n = Shape::Sphere(s).normal_at(p);
+        let n = Shape::Sphere(s).normal_at(p, None);
         assert!(n.equal_approx(Vector::new(0., 0.70711, -0.70711)));
 
         let s = Sphere::default().with_transform(
@@ -175,7 +175,7 @@ mod tests {
                 .scaling(1., 0.5, 1.),
         );
         let p = Point::new(0., f32::sqrt(2.) / 2., -f32::sqrt(2.) / 2.);
-        let n = Shape::Sphere(s).normal_at(p);
+        let n = Shape::Sphere(s).normal_at(p, None);
         assert!(n.equal_approx(Vector::new(0., 0.97014, -0.24254)));
     }
 }

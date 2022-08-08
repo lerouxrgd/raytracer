@@ -12,6 +12,8 @@ use crate::tuples::{Point, Vector};
 pub struct Intersection {
     t: OrderedFloat<f32>,
     shape: Shape,
+    u: f32,
+    v: f32,
 }
 
 impl Eq for Intersection {}
@@ -30,7 +32,18 @@ impl PartialOrd for Intersection {
 
 impl Intersection {
     pub fn new(t: f32, shape: Shape) -> Self {
-        Self { t: t.into(), shape }
+        Self {
+            t: t.into(),
+            shape,
+            u: f32::MAX,
+            v: f32::MAX,
+        }
+    }
+
+    pub fn with_uv(mut self, u: f32, v: f32) -> Self {
+        self.u = u;
+        self.v = v;
+        self
     }
 
     pub fn t(&self) -> f32 {
@@ -39,6 +52,14 @@ impl Intersection {
 
     pub fn shape(&self) -> Shape {
         self.shape
+    }
+
+    pub fn u(&self) -> f32 {
+        self.u.into()
+    }
+
+    pub fn v(&self) -> f32 {
+        self.v.into()
     }
 }
 
@@ -104,7 +125,7 @@ impl Computations {
         let shape = intersection.shape;
         let point = world_point;
         let eyev = -ray.direction;
-        let mut normalv = intersection.shape.normal_at(world_point);
+        let mut normalv = intersection.shape.normal_at(world_point, intersection);
 
         let inside = if normalv.dot(eyev) < 0. {
             normalv = -normalv;

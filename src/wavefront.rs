@@ -1,4 +1,5 @@
 //! Taken from https://crates.io/crates/wavefront but making it compile on stable
+#![allow(clippy::all)]
 
 use core::{
     fmt,

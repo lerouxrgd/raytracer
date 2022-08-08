@@ -294,7 +294,7 @@ mod tests {
         let p = Point::new(1.7321, 1.1547, -5.5774);
         assert!(g2
             .get_shape(0)
-            .normal_at(p)
+            .normal_at(p, None)
             .equal_approx(Vector::new(0.2857, 0.4286, -0.8571)));
     }
 }

@@ -2,6 +2,7 @@ mod cone;
 mod cube;
 mod cylinder;
 mod plane;
+mod smooth_triangle;
 mod sphere;
 mod triangle;
 
@@ -18,6 +19,7 @@ pub use cone::Cone;
 pub use cube::Cube;
 pub use cylinder::Cylinder;
 pub use plane::Plane;
+pub use smooth_triangle::SmoothTriangle;
 pub use sphere::Sphere;
 pub use triangle::Triangle;
 
@@ -29,6 +31,7 @@ pub enum Shape {
     Cylinder(Cylinder),
     Cone(Cone),
     Triangle(Triangle),
+    SmoothTriangle(SmoothTriangle),
 }
 
 impl Shape {
@@ -56,6 +59,17 @@ impl Shape {
         Triangle::new(p1, p2, p3).into()
     }
 
+    pub fn smooth_triangle(
+        p1: Point,
+        p2: Point,
+        p3: Point,
+        n1: Vector,
+        n2: Vector,
+        n3: Vector,
+    ) -> Self {
+        SmoothTriangle::new(p1, p2, p3, n1, n2, n3).into()
+    }
+
     pub fn with_transform<T: Into<Matrix<4, 4>>>(mut self, transform: T) -> Self {
         self.set_transform(transform.into());
         self
@@ -68,6 +82,7 @@ impl Shape {
             | &Self::Cylinder(Cylinder { transform, .. })
             | &Self::Cone(Cone { transform, .. })
             | &Self::Triangle(Triangle { transform, .. })
+            | &Self::SmoothTriangle(SmoothTriangle { transform, .. })
             | &Self::Cube(Cube { transform, .. }) => transform,
         }
     }
@@ -89,6 +104,9 @@ impl Shape {
             | Self::Triangle(Triangle {
                 ref mut transform, ..
             })
+            | Self::SmoothTriangle(SmoothTriangle {
+                ref mut transform, ..
+            })
             | Self::Cube(Cube {
                 ref mut transform, ..
             }) => *transform = t.into(),
@@ -107,6 +125,7 @@ impl Shape {
             | &Self::Cylinder(Cylinder { material, .. })
             | &Self::Cone(Cone { material, .. })
             | &Self::Triangle(Triangle { material, .. })
+            | &Self::SmoothTriangle(SmoothTriangle { material, .. })
             | &Self::Cube(Cube { material, .. }) => material,
         }
     }
@@ -126,6 +145,9 @@ impl Shape {
                 ref mut material, ..
             })
             | Self::Triangle(Triangle {
+                ref mut material, ..
+            })
+            | Self::SmoothTriangle(SmoothTriangle {
                 ref mut material, ..
             })
             | Self::Cube(Cube {
@@ -152,13 +174,19 @@ impl Shape {
             | Self::Triangle(Triangle {
                 ref mut material, ..
             })
+            | Self::SmoothTriangle(SmoothTriangle {
+                ref mut material, ..
+            })
             | Self::Cube(Cube {
                 ref mut material, ..
             }) => material,
         }
     }
 
-    pub fn normal_at(&self, world_point: Point) -> Vector {
+    pub fn normal_at<H>(&self, world_point: Point, hit: H) -> Vector
+    where
+        H: Into<Option<Intersection>>,
+    {
         let local_point = self.world_to_object(world_point);
         let local_normal = match self {
             Self::Sphere(s) => s.local_normal_at(local_point),
@@ -166,6 +194,7 @@ impl Shape {
             Self::Cylinder(c) => c.local_normal_at(local_point),
             Self::Cone(c) => c.local_normal_at(local_point),
             Self::Triangle(t) => t.local_normal_at(local_point),
+            Self::SmoothTriangle(st) => st.local_normal_at(local_point, hit.into().unwrap()),
             Self::Cube(c) => c.local_normal_at(local_point),
         };
         self.normal_to_world(local_normal)
@@ -202,6 +231,11 @@ impl Shape {
                     intersections.push(xs)
                 }
             }
+            Shape::SmoothTriangle(st) => {
+                if let Some(xs) = st.local_intersect(local_ray) {
+                    intersections.push(xs)
+                }
+            }
             Shape::Cube(s) => {
                 if let Some(xs) = s.local_intersect(local_ray) {
                     intersections.extend(xs)
@@ -217,6 +251,7 @@ impl Shape {
             | &Self::Cylinder(Cylinder { parent, .. })
             | &Self::Cone(Cone { parent, .. })
             | &Self::Triangle(Triangle { parent, .. })
+            | &Self::SmoothTriangle(SmoothTriangle { parent, .. })
             | &Self::Cube(Cube { parent, .. }) => parent,
         }
     }
@@ -228,6 +263,7 @@ impl Shape {
             | Self::Cylinder(Cylinder { ref mut parent, .. })
             | Self::Cone(Cone { ref mut parent, .. })
             | Self::Triangle(Triangle { ref mut parent, .. })
+            | Self::SmoothTriangle(SmoothTriangle { ref mut parent, .. })
             | Self::Cube(Cube { ref mut parent, .. }) => parent,
         }
     }
