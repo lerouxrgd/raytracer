@@ -96,17 +96,18 @@ impl Cube {
     }
 
     pub fn local_normal_at(&self, local_point: Point) -> Vector {
-        let maxc = [local_point.x(), local_point.y(), local_point.z()]
+        let maxc: f32 = [local_point.x(), local_point.y(), local_point.z()]
             .into_iter()
             .map(|v| OrderedFloat(v.abs()))
             .max()
-            .unwrap();
+            .unwrap()
+            .into();
 
-        if local_point.x().abs() == maxc.into() {
+        if local_point.x().abs() == maxc {
             Vector::new(local_point.x(), 0., 0.)
-        } else if local_point.y().abs() == maxc.into() {
+        } else if local_point.y().abs() == maxc {
             Vector::new(0., local_point.y(), 0.)
-        } else if local_point.z().abs() == maxc.into() {
+        } else if local_point.z().abs() == maxc {
             Vector::new(0., 0., local_point.z())
         } else {
             unreachable!()

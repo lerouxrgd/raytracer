@@ -1,0 +1,186 @@
+# ======================================================
+# the camera
+# ======================================================
+
+- add: camera
+  width: 888
+  height: 888
+  field-of-view: 0.785
+  from: [ -6, 6, -10 ]
+  to: [ 6, 0, 6 ]
+  up: [ -0.45, 1, 0 ]
+
+# ======================================================
+# light sources
+# ======================================================
+
+- add: light
+  at: [ 50, 100, -50 ]
+  intensity: [ 1, 1, 1 ]
+
+# an optional second light for additional illumination
+# - add: light
+#   at: [ -400, 50, -10 ]
+#   intensity: [ 0.2, 0.2, 0.2 ]
+
+# ======================================================
+# define some constants to avoid duplication
+# ======================================================
+
+- define: white-material
+  material:
+    color: [ 1, 1, 1 ]
+    diffuse: 0.7
+    ambient: 0.1
+    specular: 0.0
+    reflective: 0.1
+
+- define: blue-material
+  extend: [ white-material ]
+  material:
+    color: [ 0.537, 0.831, 0.914 ]
+
+- define: red-material
+  extend: [ white-material ]
+  material:
+    color: [ 0.941, 0.322, 0.388 ]
+
+- define: purple-material
+  extend: [ white-material ]
+  material:
+    color: [ 0.373, 0.404, 0.550 ]
+
+- define: standard-transform
+  transform:
+    - [ translate, 1, -1, 1 ]
+    - [ scale, 0.5, 0.5, 0.5 ]
+
+- define: large-object
+  extend: [ standard-transform ]
+  transform:
+    - [ scale, 3.5, 3.5, 3.5 ]
+
+- define: medium-object
+  extend: [ standard-transform ]
+  transform:
+    - [ scale, 3, 3, 3 ]
+
+- define: small-object
+  extend: [ standard-transform ]
+  transform:
+    - [ scale, 2, 2, 2 ]
+
+# ======================================================
+# a white backdrop for the scene
+# ======================================================
+
+- add: plane
+  material:
+    color: [ 1, 1, 1 ]
+    ambient: 1
+    diffuse: 0
+    specular: 0
+  transform:
+    - [ rotate-x, pi/2 ]
+    - [ translate, 0, 0, 500 ]
+
+# ======================================================
+# describe the elements of the scene
+# ======================================================
+
+- add: sphere
+  extend: [ large-object ]
+  material:
+    color: [ 0.373, 0.404, 0.550 ]
+    diffuse: 0.2
+    ambient: 0.0
+    specular: 1.0
+    shininess: 200
+    reflective: 0.7
+    transparency: 0.7
+    refractive-index: 1.5
+
+- add: cube
+  extend: [ white-material, medium-object ]
+  transform:
+    - [ translate, 4, 0, 0 ]
+
+- add: cube
+  extend: [ blue-material, large-object ]
+  transform:
+    - [ translate, 8.5, 1.5, -0.5 ]
+
+- add: cube
+  extend: [ red-material, large-object ]
+  transform:
+    - [ translate, 0, 0, 4 ]
+
+- add: cube
+  extend: [ white-material, small-object ]
+  transform:
+    - [ translate, 4, 0, 4 ]
+
+- add: cube
+  extend: [ purple-material, medium-object ]
+  transform:
+    - [ translate, 7.5, 0.5, 4 ]
+
+- add: cube
+  extend: [ white-material, medium-object ]
+  transform:
+    - [ translate, -0.25, 0.25, 8 ]
+
+- add: cube
+  extend: [ blue-material, large-object ]
+  transform:
+    - [ translate, 4, 1, 7.5 ]
+
+- add: cube
+  extend: [ red-material, medium-object ]
+  transform:
+    - [ translate, 10, 2, 7.5 ]
+
+- add: cube
+  extend: [ white-material, small-object ]
+  transform:
+    - [ translate, 8, 2, 12 ]
+
+- add: cube
+  extend: [ white-material, small-object ]
+  transform:
+    - [ translate, 20, 1, 9 ]
+
+- add: cube
+  extend: [ blue-material, large-object ]
+  transform:
+    - [ translate, -0.5, -5, 0.25 ]
+
+- add: cube
+  extend: [ red-material, large-object ]
+  transform:
+    - [ translate, 4, -4, 0 ]
+
+- add: cube
+  extend: [ white-material, large-object ]
+  transform:
+    - [ translate, 8.5, -4, 0 ]
+
+- add: cube
+  extend: [ white-material, large-object ]
+  transform:
+    - [ translate, 0, -4, 4 ]
+
+- add: cube
+  extend: [ purple-material, large-object ]
+  transform:
+    - [ translate, -0.5, -4.5, 8 ]
+
+- add: cube
+  extend: [ white-material, large-object ]
+  transform:
+    - [ translate, 0, -8, 4 ]
+
+- add: cube
+  extend: [ white-material, large-object ]
+  transform:
+    - [ translate, -0.5, -8.5, 8 ]

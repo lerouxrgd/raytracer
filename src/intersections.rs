@@ -55,11 +55,11 @@ impl Intersection {
     }
 
     pub fn u(&self) -> f32 {
-        self.u.into()
+        self.u
     }
 
     pub fn v(&self) -> f32 {
-        self.v.into()
+        self.v
     }
 }
 

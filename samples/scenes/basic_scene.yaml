@@ -1,0 +1,59 @@
+- add: camera
+  width: 1280
+  height: 720
+  field-of-view: pi/3
+  from: [0, 1.5, -5]
+  to: [0, 1, 0]
+  up: [0, 1, 0]
+- add: light
+  at: [-10, 10, -10]
+  intensity: [1, 1, 1]
+# floor
+- add: plane
+  transform:
+    - [rotate-y, pi/4]
+    - [scale, 0.4, 0.4, 0.4]
+  material:
+    pattern:
+      kind: checker
+      colors:
+        - [1, 1, 1]
+        - [0, 0, 0]
+    color: [1, 0.9,  0.9]
+    specular: 0
+    reflective: 0.3
+# backdrop
+- add: plane
+  transform:
+    - [rotate-x, pi/2]
+    - [translate, 0, 0, 5]
+  material:
+    color: [1, 0.9,  0.9]
+    specular: 0
+# middle sphere
+- add: sphere
+  transform:
+    - [translate, -0.5, 1., 0.5]
+  material:
+    color: [0.1, 0.4,  0.9]
+    diffuse: 0.7
+    specular: 0.3
+    reflective: 0.8
+# right sphere
+- add: sphere
+  transform:
+    - [scale, 0.5, 0.5, 0.5]
+    - [translate, 1.5, 0.5, -0.5]
+  material:
+    color: [0.5, 1, 0.1]
+    diffuse: 0.7
+    specular: 0.3
+# left sphere
+- add: sphere
+  transform:
+    - [scale, 0.33, 0.33, 0.33]
+    - [translate, -1.5, 0.33, -0.75]
+  material:
+    color: [1, 0.8, 0.1]
+    diffuse: 0.7
+    specular: 0.3

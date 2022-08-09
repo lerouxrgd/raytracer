@@ -37,6 +37,11 @@ impl Camera {
         }
     }
 
+    pub fn with_transform<T: Into<Matrix<4, 4>>>(mut self, transform: T) -> Self {
+        self.transform = transform.into();
+        self
+    }
+
     pub fn ray_for_pixel(&self, px: u32, py: u32) -> Ray {
         // The offset from the edge of the canvas to the pixel's center
         let xoffset = (px as f32 + 0.5) * self.pixel_size;

@@ -4,12 +4,17 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+clap = {version = "3", features = ["derive"] }
 derivative = "2"
 image = { version = "0.24", default-features = false, features = ["pnm"]}
 lazy_static = "1"
+meval = "0.2"
 ordered-float = "3"
 parking_lot = { version = "0.12", default-features = false }
 rayon = "1"
+serde = { version = "1", features = ["derive"] }
+serde_plain = "1"
+serde_yaml = "0.9"
 slotmap = "1"
 
 # [profile.release]

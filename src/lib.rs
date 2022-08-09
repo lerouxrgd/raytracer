@@ -8,6 +8,7 @@ pub mod matrices;
 pub mod obj;
 pub mod patterns;
 pub mod rays;
+pub mod scene;
 pub mod shapes;
 pub mod transformations;
 pub mod tuples;

@@ -161,9 +161,11 @@ impl Group {
         let mut groups = GROUPS.write();
         let group = groups.get_mut(self).unwrap();
         let children = mem::take(&mut group.children);
+        drop(groups);
         for child in children {
-            groups.remove(child);
+            child.delete();
         }
+        let mut groups = GROUPS.write();
         groups.remove(self);
     }
 }

@@ -131,6 +131,12 @@ impl Point {
     }
 }
 
+impl From<[f32; 3]> for Point {
+    fn from(t: [f32; 3]) -> Self {
+        Self::new(t[0], t[1], t[2])
+    }
+}
+
 impl Sub for Point {
     type Output = Vector;
 
@@ -213,6 +219,12 @@ impl Vector {
 
     pub fn reflect(&self, normal: Vector) -> Vector {
         *self - 2. * self.dot(normal) * normal
+    }
+}
+
+impl From<[f32; 3]> for Vector {
+    fn from(t: [f32; 3]) -> Self {
+        Self::new(t[0], t[1], t[2])
     }
 }
 
@@ -306,6 +318,12 @@ impl Color {
 
     pub fn equal_approx(&self, other: Self) -> bool {
         self.0.equal_approx(other.0)
+    }
+}
+
+impl From<[f32; 3]> for Color {
+    fn from(t: [f32; 3]) -> Self {
+        Self::new(t[0], t[1], t[2])
     }
 }
 

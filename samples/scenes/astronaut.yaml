@@ -1,0 +1,15 @@
+- add: camera
+  width: 1024
+  height: 576
+  field-of-view: pi/3
+  from: [0, 0, 150]
+  to: [0, 0, 0]
+  up: [0, 1, 0]
+- add: light
+  at: [-20, 30, 20]
+  intensity: [1, 1, 1]
+- define: astronaut.obj
+  transform:
+    - [rotate-x, -pi/4]
+    - [rotate-y, pi/6]
+    - [translate, 20, 10, 0]

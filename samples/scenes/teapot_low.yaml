@@ -1,0 +1,14 @@
+- add: camera
+  width: 1280
+  height: 720
+  field-of-view: pi/3
+  from: [0, 20, 50]
+  to: [0, 10, 0]
+  up: [0, 1, 0]
+- add: light
+  at: [-20, 30, 20]
+  intensity: [1, 1, 1]
+- define: teapot_low.obj
+  transform:
+    - [rotate-x, -pi/2]
+    - [rotate-y, pi/6]

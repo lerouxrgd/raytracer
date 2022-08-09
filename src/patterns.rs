@@ -12,7 +12,12 @@ pub enum Pattern {
 }
 
 impl Pattern {
-    pub fn transform(&self) -> Matrix<4, 4> {
+    pub fn with_transform<T: Into<Matrix<4, 4>>>(mut self, transform: T) -> Self {
+        self.set_transform(transform.into());
+        self
+    }
+
+    pub fn get_transform(&self) -> Matrix<4, 4> {
         match self {
             &Self::Striped(Striped { transform, .. })
             | &Self::Gradient(Gradient { transform, .. })
@@ -22,7 +27,7 @@ impl Pattern {
         }
     }
 
-    pub fn transform_mut(&mut self) -> &mut Matrix<4, 4> {
+    pub fn set_transform<T: Into<Matrix<4, 4>>>(&mut self, t: T) {
         match self {
             Self::Striped(Striped {
                 ref mut transform, ..
@@ -38,13 +43,13 @@ impl Pattern {
             })
             | Self::XyzRgb(XyzRgb {
                 ref mut transform, ..
-            }) => transform,
+            }) => *transform = t.into(),
         }
     }
 
     pub fn pattern_at_shape(&self, shape: Shape, world_point: Point) -> Color {
         let object_point = shape.world_to_object(world_point);
-        let pattern_point = self.transform().inverse().unwrap() * object_point;
+        let pattern_point = self.get_transform().inverse().unwrap() * object_point;
         match self {
             Self::Striped(s) => s.pattern_at(pattern_point),
             Self::Gradient(g) => g.pattern_at(pattern_point),
@@ -70,6 +75,11 @@ impl Striped {
             b,
             transform: Matrix::identity(),
         }
+    }
+
+    pub fn with_transform<T: Into<Matrix<4, 4>>>(mut self, transform: T) -> Self {
+        self.transform = transform.into();
+        self
     }
 
     pub fn pattern_at(&self, pattern_point: Point) -> Color {
@@ -110,6 +120,11 @@ impl Gradient {
         }
     }
 
+    pub fn with_transform<T: Into<Matrix<4, 4>>>(mut self, transform: T) -> Self {
+        self.transform = transform.into();
+        self
+    }
+
     pub fn pattern_at(&self, pattern_point: Point) -> Color {
         let distance = self.b - self.a;
         let fraction = pattern_point.x() - pattern_point.x().floor();
@@ -144,6 +159,11 @@ impl Ring {
             b,
             transform: Matrix::identity(),
         }
+    }
+
+    pub fn with_transform<T: Into<Matrix<4, 4>>>(mut self, transform: T) -> Self {
+        self.transform = transform.into();
+        self
     }
 
     pub fn pattern_at(&self, pattern_point: Point) -> Color {
@@ -189,6 +209,11 @@ impl Checker {
         }
     }
 
+    pub fn with_transform<T: Into<Matrix<4, 4>>>(mut self, transform: T) -> Self {
+        self.transform = transform.into();
+        self
+    }
+
     pub fn pattern_at(&self, pattern_point: Point) -> Color {
         if (pattern_point.x().floor() + pattern_point.y().floor() + pattern_point.z().floor()) % 2.
             == 0.
@@ -223,6 +248,11 @@ impl XyzRgb {
         Self {
             transform: Matrix::identity(),
         }
+    }
+
+    pub fn with_transform<T: Into<Matrix<4, 4>>>(mut self, transform: T) -> Self {
+        self.transform = transform.into();
+        self
     }
 
     pub fn pattern_at(&self, pattern_point: Point) -> Color {
@@ -277,14 +307,16 @@ mod tests {
         assert!(c == Color::white());
 
         let shape = Sphere::default();
-        let mut p: Pattern = Striped::new(Color::white(), Color::black()).into();
-        *p.transform_mut() = scaling(2., 2., 2.);
+        let p: Pattern = Striped::new(Color::white(), Color::black())
+            .with_transform(scaling(2., 2., 2.))
+            .into();
         let c = p.pattern_at_shape(shape.into(), Point::new(1.5, 0., 0.));
         assert!(c == Color::white());
 
         let shape = Sphere::default().with_transform(scaling(2., 2., 2.));
-        let mut p: Pattern = Striped::new(Color::white(), Color::black()).into();
-        *p.transform_mut() = translation(0.5, 0., 0.);
+        let p: Pattern = Striped::new(Color::white(), Color::black())
+            .with_transform(translation(0.5, 0., 0.))
+            .into();
         let c = p.pattern_at_shape(shape.into(), Point::new(2.5, 0., 0.));
         assert!(c == Color::white());
     }
