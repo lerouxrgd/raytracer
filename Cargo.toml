@@ -8,6 +8,7 @@ derivative = "2"
 image = { version = "0.24", default-features = false, features = ["pnm"]}
 lazy_static = "1"
 ordered-float = "3"
+parking_lot = { version = "0.12", default-features = false }
 rayon = "1"
 slotmap = "1"
 

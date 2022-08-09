@@ -1,8 +1,8 @@
 use std::f32::consts::PI;
 use std::mem;
-use std::sync::RwLock;
 
 use lazy_static::lazy_static;
+use parking_lot::RwLock;
 use slotmap::{Key, SlotMap};
 
 use crate::intersections::Intersection;
@@ -41,26 +41,26 @@ unsafe impl slotmap::Key for Group {
 
 impl Group {
     pub fn with_transform<T: Into<Matrix<4, 4>>>(self, transform: T) -> Self {
-        let mut groups = GROUPS.write().unwrap();
+        let mut groups = GROUPS.write();
         let group = groups.get_mut(self).unwrap();
         group.transform = transform.into();
         self
     }
 
     pub fn get_transform(&self) -> Matrix<4, 4> {
-        let groups = GROUPS.read().unwrap();
+        let groups = GROUPS.read_recursive();
         let group = groups.get(*self).unwrap();
         group.transform
     }
 
     pub fn set_transform<T: Into<Matrix<4, 4>>>(&mut self, t: T) {
-        let mut groups = GROUPS.write().unwrap();
+        let mut groups = GROUPS.write();
         let group = groups.get_mut(*self).unwrap();
         group.transform = t.into();
     }
 
     pub fn add_child(&mut self, child: Group) {
-        let mut groups = GROUPS.write().unwrap();
+        let mut groups = GROUPS.write();
 
         let group = groups.get_mut(*self).unwrap();
         group.children.push(child);
@@ -70,33 +70,33 @@ impl Group {
     }
 
     pub fn get_child(&self, i: usize) -> Group {
-        let groups = GROUPS.read().unwrap();
+        let groups = GROUPS.read_recursive();
         let group = groups.get(*self).unwrap();
         group.children[i]
     }
 
     pub fn add_shape(&mut self, mut shape: Shape) {
-        let mut groups = GROUPS.write().unwrap();
+        let mut groups = GROUPS.write();
         let group = groups.get_mut(*self).unwrap();
         *shape.parent_mut() = *self;
         group.shapes.push(shape);
     }
 
     pub fn get_shape(&self, i: usize) -> Shape {
-        let groups = GROUPS.read().unwrap();
+        let groups = GROUPS.read_recursive();
         let group = groups.get(*self).unwrap();
         group.shapes[i]
     }
 
     pub fn set_shape(&mut self, i: usize, mut shape: Shape) {
-        let mut groups = GROUPS.write().unwrap();
+        let mut groups = GROUPS.write();
         let group = groups.get_mut(*self).unwrap();
         *shape.parent_mut() = *self;
         group.shapes[i] = shape;
     }
 
     pub fn len(&self) -> usize {
-        let groups = GROUPS.read().unwrap();
+        let groups = GROUPS.read_recursive();
         let group = groups.get(*self).unwrap();
         group.shapes.len()
     }
@@ -106,7 +106,7 @@ impl Group {
     }
 
     pub fn local_intersect(&self, local_ray: Ray) -> Vec<Intersection> {
-        let groups = GROUPS.read().unwrap();
+        let groups = GROUPS.read_recursive();
         let group = groups.get(*self).unwrap();
         let mut xs = vec![];
         for shape in &group.shapes {
@@ -119,7 +119,7 @@ impl Group {
     }
 
     pub fn intersect(&self, intersections: &mut Vec<Intersection>, world_ray: Ray) {
-        let groups = GROUPS.read().unwrap();
+        let groups = GROUPS.read_recursive();
         let group = groups.get(*self).unwrap();
         let inverse = group.transform.inverse().unwrap();
         let local_ray = world_ray.transform(inverse);
@@ -127,9 +127,7 @@ impl Group {
     }
 
     pub fn parent(&self) -> Group {
-        let groups = GROUPS.read().unwrap();
-        let group = groups.get(*self).unwrap();
-        group.parent
+        GROUPS.read_recursive().get(*self).unwrap().parent
     }
 
     pub fn world_to_object(&self, point: Point) -> Point {
@@ -143,7 +141,7 @@ impl Group {
     }
 
     pub fn normal_to_world(&self, normal: Vector) -> Vector {
-        let groups = GROUPS.read().unwrap();
+        let groups = GROUPS.read_recursive();
         let group = groups.get(*self).unwrap();
 
         let inverse = group.transform.inverse().unwrap();
@@ -160,7 +158,7 @@ impl Group {
     }
 
     pub fn delete(self) {
-        let mut groups = GROUPS.write().unwrap();
+        let mut groups = GROUPS.write();
         let group = groups.get_mut(self).unwrap();
         let children = mem::take(&mut group.children);
         for child in children {
@@ -178,7 +176,7 @@ impl Default for Group {
             children: vec![],
             parent: Group::null(),
         };
-        let handle = GROUPS.write().unwrap().insert(group);
+        let handle = GROUPS.write().insert(group);
         handle
     }
 }
