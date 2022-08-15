@@ -1,3 +1,4 @@
+use crate::csg::Csg;
 use crate::groups::Group;
 use crate::intersections::{Computations, Intersections};
 use crate::lights::PointLight;
@@ -12,6 +13,7 @@ pub struct World {
     pub light: PointLight,
     pub shapes: Vec<Shape>,
     pub groups: Vec<Group>,
+    pub csgs: Vec<Csg>,
 }
 
 impl Default for World {
@@ -31,24 +33,30 @@ impl Default for World {
             light,
             shapes: vec![s1.into(), s2.into()],
             groups: vec![],
+            csgs: vec![],
         }
     }
 }
 
 impl World {
     pub fn intersect(&self, ray: Ray) -> Intersections {
-        let xs = self.groups.iter().fold(vec![], |mut xs, group| {
+        let xs = self
+            .csgs
+            .iter()
+            .flat_map(|csg| csg.local_intersect(ray))
+            .collect();
+
+        let xs = self.groups.iter().fold(xs, |mut xs, group| {
             group.intersect(&mut xs, ray);
             xs
         });
 
-        self.shapes
-            .iter()
-            .fold(xs, |mut xs, shape| {
-                shape.intersect(&mut xs, ray);
-                xs
-            })
-            .into()
+        let xs = self.shapes.iter().fold(xs, |mut xs, shape| {
+            shape.intersect(&mut xs, ray);
+            xs
+        });
+
+        xs.into()
     }
 
     pub fn shade_hit(&self, comps: Computations, remaining: u8) -> Color {

@@ -1,3 +1,5 @@
+#![allow(clippy::large_enum_variant)]
+
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
@@ -7,6 +9,7 @@ use std::path::PathBuf;
 use serde::{de, Deserialize, Deserializer};
 
 use crate::camera::Camera;
+use crate::csg::{Csg, CsgChild, CsgOp};
 use crate::groups::Group;
 use crate::lights::PointLight;
 use crate::materials::Material;
@@ -51,6 +54,7 @@ impl Scene {
         let mut define_materials = HashMap::<String, Vec<MaterialSpec>>::new();
         let mut shapes = Vec::new();
         let mut groups = Vec::new();
+        let mut csgs = Vec::new();
 
         for instruction in &self.instructions {
             match instruction {
@@ -118,6 +122,10 @@ impl Scene {
                 Instruction::Add(Add::AddShape(a @ AddShape::Group { .. })) => {
                     groups.push(a.make_group(&define_transforms, &define_materials));
                 }
+
+                Instruction::Add(Add::AddCsg(a @ AddCsg::Csg { .. })) => {
+                    csgs.push(a.make_csg(&define_transforms, &define_materials));
+                }
             }
         }
 
@@ -125,7 +133,7 @@ impl Scene {
             let file_name = obj_file
                 .file_name()
                 .map(|name| name.to_string_lossy().to_string())
-                .ok_or_else(|| "Invalid obj file")?;
+                .ok_or("Invalid obj file")?;
 
             let mut final_transform = Transform::default();
             if let Some(specs) = define_transforms.get(&file_name) {
@@ -143,6 +151,7 @@ impl Scene {
         let world = World {
             shapes,
             groups,
+            csgs,
             light: light.unwrap(),
         };
         let canvas = camera.unwrap().render(&world);
@@ -164,6 +173,7 @@ pub enum Instruction {
 pub enum Add {
     AddGear(AddGear),
     AddShape(AddShape),
+    AddCsg(AddCsg),
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -301,8 +311,8 @@ impl AddShape {
                     transform.as_ref(),
                     material.as_ref(),
                     extend.as_ref(),
-                    &define_transforms,
-                    &define_materials,
+                    define_transforms,
+                    define_materials,
                 );
 
                 Sphere::default()
@@ -320,8 +330,8 @@ impl AddShape {
                     transform.as_ref(),
                     material.as_ref(),
                     extend.as_ref(),
-                    &define_transforms,
-                    &define_materials,
+                    define_transforms,
+                    define_materials,
                 );
 
                 Plane::default()
@@ -339,8 +349,8 @@ impl AddShape {
                     transform.as_ref(),
                     material.as_ref(),
                     extend.as_ref(),
-                    &define_transforms,
-                    &define_materials,
+                    define_transforms,
+                    define_materials,
                 );
 
                 Cube::default()
@@ -361,8 +371,8 @@ impl AddShape {
                     transform.as_ref(),
                     material.as_ref(),
                     extend.as_ref(),
-                    &define_transforms,
-                    &define_materials,
+                    define_transforms,
+                    define_materials,
                 );
 
                 Cylinder::default()
@@ -386,8 +396,8 @@ impl AddShape {
                     transform.as_ref(),
                     material.as_ref(),
                     extend.as_ref(),
-                    &define_transforms,
-                    &define_materials,
+                    define_transforms,
+                    define_materials,
                 );
 
                 Cone::default()
@@ -411,8 +421,8 @@ impl AddShape {
                     transform.as_ref(),
                     material.as_ref(),
                     extend.as_ref(),
-                    &define_transforms,
-                    &define_materials,
+                    define_transforms,
+                    define_materials,
                 );
 
                 Triangle::new((*p1).into(), (*p2).into(), (*p3).into())
@@ -436,8 +446,8 @@ impl AddShape {
                     transform.as_ref(),
                     material.as_ref(),
                     extend.as_ref(),
-                    &define_transforms,
-                    &define_materials,
+                    define_transforms,
+                    define_materials,
                 );
 
                 SmoothTriangle::new(
@@ -472,8 +482,8 @@ impl AddShape {
                     transform.as_ref(),
                     None,
                     extend.as_ref(),
-                    &define_transforms,
-                    &define_materials,
+                    define_transforms,
+                    define_materials,
                 );
                 let mut group = Group::default().with_transform(transform);
                 for shape in shapes {
@@ -482,7 +492,7 @@ impl AddShape {
                             let g = a.make_group(define_transforms, define_materials);
                             group.add_child(g);
                         }
-                        a @ _ => {
+                        a => {
                             let s = a.make_shape(define_transforms, define_materials);
                             group.add_shape(s);
                         }
@@ -530,6 +540,232 @@ fn make_transform_material(
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "add")]
+#[serde(rename_all = "kebab-case")]
+pub enum AddCsg {
+    Csg { args: [CsgElem; 2], op: CsgOp },
+}
+
+impl AddCsg {
+    pub fn make_csg(
+        &self,
+        define_transforms: &HashMap<String, Vec<TransformSpec>>,
+        define_materials: &HashMap<String, Vec<MaterialSpec>>,
+    ) -> Csg {
+        match self {
+            Self::Csg { args, op } => {
+                let left = args[0].make_csg_child(define_transforms, define_materials);
+                let right = args[1].make_csg_child(define_transforms, define_materials);
+                Csg::new(*op, left, right)
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "kind")]
+#[serde(rename_all = "kebab-case")]
+pub enum CsgElem {
+    Csg {
+        op: CsgOp,
+        args: [Box<CsgElem>; 2],
+    },
+    Sphere {
+        extend: Option<Vec<String>>,
+        #[serde(default, deserialize_with = "deser_transform")]
+        transform: Option<Vec<TransformSpec>>,
+        material: Option<MaterialSpec>,
+    },
+    Plane {
+        extend: Option<Vec<String>>,
+        #[serde(default, deserialize_with = "deser_transform")]
+        transform: Option<Vec<TransformSpec>>,
+        material: Option<MaterialSpec>,
+    },
+    Cube {
+        extend: Option<Vec<String>>,
+        #[serde(default, deserialize_with = "deser_transform")]
+        transform: Option<Vec<TransformSpec>>,
+        material: Option<MaterialSpec>,
+    },
+    Cylinder {
+        extend: Option<Vec<String>>,
+        #[serde(default, deserialize_with = "deser_transform")]
+        transform: Option<Vec<TransformSpec>>,
+        material: Option<MaterialSpec>,
+        min: Option<f32>,
+        max: Option<f32>,
+        closed: Option<bool>,
+    },
+    Cone {
+        extend: Option<Vec<String>>,
+        #[serde(default, deserialize_with = "deser_transform")]
+        transform: Option<Vec<TransformSpec>>,
+        material: Option<MaterialSpec>,
+        min: Option<f32>,
+        max: Option<f32>,
+        closed: Option<bool>,
+    },
+    Triangle {
+        extend: Option<Vec<String>>,
+        #[serde(default, deserialize_with = "deser_transform")]
+        transform: Option<Vec<TransformSpec>>,
+        material: Option<MaterialSpec>,
+        p1: [f32; 3],
+        p2: [f32; 3],
+        p3: [f32; 3],
+    },
+    SmoothTriangle {
+        extend: Option<Vec<String>>,
+        #[serde(default, deserialize_with = "deser_transform")]
+        transform: Option<Vec<TransformSpec>>,
+        material: Option<MaterialSpec>,
+        p1: [f32; 3],
+        p2: [f32; 3],
+        p3: [f32; 3],
+        n1: [f32; 3],
+        n2: [f32; 3],
+        n3: [f32; 3],
+    },
+}
+
+impl CsgElem {
+    pub fn make_csg_child(
+        &self,
+        define_transforms: &HashMap<String, Vec<TransformSpec>>,
+        define_materials: &HashMap<String, Vec<MaterialSpec>>,
+    ) -> CsgChild {
+        match &self {
+            Self::Sphere { .. }
+            | Self::Plane { .. }
+            | Self::Cube { .. }
+            | Self::Cylinder { .. }
+            | Self::Cone { .. }
+            | Self::Triangle { .. }
+            | Self::SmoothTriangle { .. } => {
+                let spec = AddShape::from(self.clone());
+                let shape = spec.make_shape(define_transforms, define_materials);
+                CsgChild::Shape(Box::new(shape))
+            }
+            Self::Csg { op, args } => {
+                let left = args[0].make_csg_child(define_transforms, define_materials);
+                let right = args[1].make_csg_child(define_transforms, define_materials);
+                let csg = Csg::new(*op, left, right);
+                CsgChild::Csg(Box::new(csg))
+            }
+        }
+    }
+}
+
+impl From<CsgElem> for AddShape {
+    fn from(csg: CsgElem) -> Self {
+        match csg {
+            CsgElem::Sphere {
+                extend,
+                transform,
+                material,
+            } => Self::Sphere {
+                extend,
+                transform,
+                material,
+            },
+
+            CsgElem::Plane {
+                extend,
+                transform,
+                material,
+            } => Self::Plane {
+                extend,
+                transform,
+                material,
+            },
+
+            CsgElem::Cube {
+                extend,
+                transform,
+                material,
+            } => Self::Cube {
+                extend,
+                transform,
+                material,
+            },
+
+            CsgElem::Cylinder {
+                extend,
+                transform,
+                material,
+                min,
+                max,
+                closed,
+            } => Self::Cylinder {
+                extend,
+                transform,
+                material,
+                min,
+                max,
+                closed,
+            },
+
+            CsgElem::Cone {
+                extend,
+                transform,
+                material,
+                min,
+                max,
+                closed,
+            } => Self::Cone {
+                extend,
+                transform,
+                material,
+                min,
+                max,
+                closed,
+            },
+
+            CsgElem::Triangle {
+                extend,
+                transform,
+                material,
+                p1,
+                p2,
+                p3,
+            } => Self::Triangle {
+                extend,
+                transform,
+                material,
+                p1,
+                p2,
+                p3,
+            },
+
+            CsgElem::SmoothTriangle {
+                extend,
+                transform,
+                material,
+                p1,
+                p2,
+                p3,
+                n1,
+                n2,
+                n3,
+            } => Self::SmoothTriangle {
+                extend,
+                transform,
+                material,
+                p1,
+                p2,
+                p3,
+                n1,
+                n2,
+                n3,
+            },
+
+            CsgElem::Csg { .. } => unreachable!(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct Define {
     pub define: String,
     #[serde(default)]
@@ -573,13 +809,13 @@ pub enum TransformSpec {
 
 impl TransformSpec {
     pub fn update(&self, transform: Transform) -> Transform {
-        match self {
-            &Self::Translate { x, y, z } => transform.translation(x, y, z),
-            &Self::Scale { x, y, z } => transform.scaling(x, y, z),
-            &Self::RotateX { angle } => transform.rotation_x(angle),
-            &Self::RotateY { angle } => transform.rotation_y(angle),
-            &Self::RotateZ { angle } => transform.rotation_z(angle),
-            &Self::Shear {
+        match *self {
+            Self::Translate { x, y, z } => transform.translation(x, y, z),
+            Self::Scale { x, y, z } => transform.scaling(x, y, z),
+            Self::RotateX { angle } => transform.rotation_x(angle),
+            Self::RotateY { angle } => transform.rotation_y(angle),
+            Self::RotateZ { angle } => transform.rotation_z(angle),
+            Self::Shear {
                 x_y,
                 x_z,
                 y_x,

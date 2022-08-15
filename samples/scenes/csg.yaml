@@ -1,0 +1,50 @@
+- add: camera
+  width: 1280
+  height: 720
+  field-of-view: pi/3
+  from: [0, 1.5, -5]
+  to: [0, 0, 0]
+  up: [0, 1, 0]
+- add: light
+  at: [-10, 10, -10]
+  intensity: [1, 1, 1]
+- add: csg
+  op: difference
+  args:
+  # outer
+  - kind: csg
+    op: intersect
+    args:
+    - kind: sphere
+      transform:
+      - [scale, 1.3, 1.3, 1.3]
+    - kind: cube
+      transform:
+      - [rotate-y, pi/3]
+  # inner
+  - kind: csg
+    op: union
+    args:
+    - kind: csg
+      op: union
+      args:
+      - kind: cylinder
+        transform:
+        - [scale, 0.6, 0.6, 0.6]
+        - [rotate-y, pi/3]
+        material:
+          color: [1, 0, 0]
+      - kind: cylinder
+        transform:
+        - [scale, 0.6, 0.6, 0.6]
+        - [rotate-x, pi/2]
+        - [rotate-y, pi/3]
+        material:
+          color: [0, 0, 1]
+    - kind: cylinder
+      transform:
+      - [scale, 0.6, 0.6, 0.6]
+      - [rotate-z, pi/2]
+      - [rotate-y, pi/3]
+      material:
+        color: [0, 1, 0]

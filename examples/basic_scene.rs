@@ -77,6 +77,7 @@ fn main() {
     let world = World {
         shapes,
         groups: vec![],
+        csgs: vec![],
         light: PointLight::new(Point::new(-10., 10., -10.), Color::white()),
     };
 
