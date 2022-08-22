@@ -1,6 +1,6 @@
 [package]
 name = "raytracer"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 
 [dependencies]
@@ -17,5 +17,5 @@ serde_plain = "1"
 serde_yaml = "0.9"
 slotmap = "1"
 
-# [profile.release]
-# lto = true
+[profile.release]
+lto = true
