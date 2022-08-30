@@ -5,9 +5,10 @@
   from: [0, 1.5, -5]
   to: [0, 1, 0]
   up: [0, 1, 0]
-- add: light
+- add: point-light
   at: [-10, 10, -10]
   intensity: [1, 1, 1]
+
 # floor
 - add: plane
   transform:
@@ -22,6 +23,7 @@
     color: [1, 0.9,  0.9]
     specular: 0
     reflective: 0.3
+
 # backdrop
 - add: plane
   transform:
@@ -30,6 +32,7 @@
   material:
     color: [1, 0.9,  0.9]
     specular: 0
+
 # middle sphere
 - add: sphere
   transform:
@@ -39,6 +42,7 @@
     diffuse: 0.7
     specular: 0.3
     reflective: 0.8
+
 # right sphere
 - add: sphere
   transform:
@@ -48,6 +52,7 @@
     color: [0.5, 1, 0.1]
     diffuse: 0.7
     specular: 0.3
+
 # left sphere
 - add: sphere
   transform:

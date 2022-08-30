@@ -16,6 +16,7 @@ use crate::tuples::{Point, Vector};
 pub struct Cube {
     pub(super) transform: Matrix<4, 4>,
     pub(super) material: Material,
+    pub(super) shadow: bool,
     #[derivative(PartialEq = "ignore")]
     pub(super) parent: Group,
 }
@@ -47,6 +48,19 @@ impl Cube {
 
     pub fn set_material(&mut self, m: Material) {
         self.material = m
+    }
+
+    pub fn with_shadow(mut self, shadow: bool) -> Self {
+        self.shadow = shadow;
+        self
+    }
+
+    pub fn get_shadow(&self) -> bool {
+        self.shadow
+    }
+
+    pub fn set_shadow(&mut self, s: bool) {
+        self.shadow = s
     }
 
     fn check_axis(origin: f32, direction: f32) -> (f32, f32) {
@@ -120,6 +134,7 @@ impl Default for Cube {
         Self {
             transform: Matrix::identity(),
             material: Material::default(),
+            shadow: true,
             parent: Group::null(),
         }
     }

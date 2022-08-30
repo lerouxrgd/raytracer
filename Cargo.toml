@@ -1,6 +1,6 @@
 [package]
 name = "raytracer"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 
 [dependencies]
@@ -11,6 +11,7 @@ lazy_static = "1"
 meval = "0.2"
 ordered-float = "3"
 parking_lot = { version = "0.12", default-features = false }
+rand = "0.8"
 rayon = "1"
 serde = { version = "1", features = ["derive"] }
 serde_plain = "1"

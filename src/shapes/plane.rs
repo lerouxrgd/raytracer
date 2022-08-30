@@ -15,6 +15,7 @@ use crate::tuples::{Point, Vector};
 pub struct Plane {
     pub(super) transform: Matrix<4, 4>,
     pub(super) material: Material,
+    pub(super) shadow: bool,
     #[derivative(PartialEq = "ignore")]
     pub(super) parent: Group,
 }
@@ -48,6 +49,19 @@ impl Plane {
         self.material = m
     }
 
+    pub fn with_shadow(mut self, shadow: bool) -> Self {
+        self.shadow = shadow;
+        self
+    }
+
+    pub fn get_shadow(&self) -> bool {
+        self.shadow
+    }
+
+    pub fn set_shadow(&mut self, s: bool) {
+        self.shadow = s
+    }
+
     pub fn local_intersect(&self, local_ray: Ray) -> Option<Intersection> {
         if local_ray.direction.y().abs() < Self::EPSILON {
             None
@@ -67,6 +81,7 @@ impl Default for Plane {
         Self {
             transform: Matrix::identity(),
             material: Material::default(),
+            shadow: true,
             parent: Group::null(),
         }
     }

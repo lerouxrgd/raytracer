@@ -289,4 +289,16 @@ impl Shape {
             normal
         }
     }
+
+    pub fn shadow(&self) -> bool {
+        match self {
+            &Self::Sphere(Sphere { shadow, .. })
+            | &Self::Plane(Plane { shadow, .. })
+            | &Self::Cylinder(Cylinder { shadow, .. })
+            | &Self::Cone(Cone { shadow, .. })
+            | &Self::Triangle(Triangle { shadow, .. })
+            | &Self::SmoothTriangle(SmoothTriangle { shadow, .. })
+            | &Self::Cube(Cube { shadow, .. }) => shadow,
+        }
+    }
 }

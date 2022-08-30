@@ -1,7 +1,7 @@
 use crate::csg::Csg;
 use crate::groups::Group;
 use crate::intersections::{Computations, Intersections};
-use crate::lights::PointLight;
+use crate::lights::{Light, PointLight};
 use crate::materials::{lighting, Material};
 use crate::rays::Ray;
 use crate::shapes::{Shape, Sphere};
@@ -10,7 +10,7 @@ use crate::tuples::{Color, Point};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct World {
-    pub light: PointLight,
+    pub light: Light,
     pub shapes: Vec<Shape>,
     pub groups: Vec<Group>,
     pub csgs: Vec<Csg>,
@@ -30,7 +30,7 @@ impl Default for World {
         let s2 = Sphere::default().with_transform(scaling(0.5, 0.5, 0.5));
 
         Self {
-            light,
+            light: light.into(),
             shapes: vec![s1.into(), s2.into()],
             groups: vec![],
             csgs: vec![],
@@ -60,7 +60,7 @@ impl World {
     }
 
     pub fn shade_hit(&self, comps: Computations, remaining: u8) -> Color {
-        let shadowed = self.is_shadowed(comps.over_point);
+        let light_intensity = self.light.intensity_at(comps.over_point, self);
         let surface = lighting(
             comps.shape.get_material(),
             comps.shape,
@@ -68,7 +68,7 @@ impl World {
             comps.over_point,
             comps.eyev,
             comps.normalv,
-            shadowed,
+            light_intensity,
         );
 
         let reflected = self.reflected_color(comps, remaining);
@@ -93,13 +93,13 @@ impl World {
         }
     }
 
-    pub fn is_shadowed(&self, p: Point) -> bool {
-        let v = self.light.position - p;
+    pub fn is_shadowed(&self, light_position: Point, p: Point) -> bool {
+        let v = light_position - p;
         let distance = v.magnitude();
         let direction = v.normalize();
         let r = Ray::new(p, direction);
         if let Some(hit) = self.intersect(r).hit() {
-            hit.t() < distance
+            hit.t() < distance && hit.shape().shadow()
         } else {
             false
         }
@@ -181,7 +181,7 @@ mod tests {
         assert!(c.equal_approx(Color::new(0.38066, 0.47583, 0.2855)));
 
         let mut w = World::default();
-        w.light = PointLight::new(Point::new(0., 0.25, 0.), Color::white());
+        w.light = PointLight::new(Point::new(0., 0.25, 0.), Color::white()).into();
         let r = Ray::new(Point::new(0., 0., 0.), Vector::new(0., 0., 1.));
         let shape = w.shapes[1];
         let i = Intersection::new(0.5, shape);
@@ -208,7 +208,7 @@ mod tests {
             .equal_approx(w.shapes[1].get_material().color));
 
         let mut w = World::default();
-        w.light = PointLight::new(Point::new(0., 0., -10.), Color::white());
+        w.light = PointLight::new(Point::new(0., 0., -10.), Color::white()).into();
         let s1 = Sphere::default();
         w.shapes.push(s1.into());
         let s2 = Sphere::default().with_transform(translation(0., 0., 10.));
@@ -222,21 +222,17 @@ mod tests {
 
     #[test]
     fn world_shadows() {
+        let cases = vec![
+            (Point::new(-10., -10., 10.), false),
+            (Point::new(10., 10., 10.), true),
+            (Point::new(-20., -20., -20.), false),
+            (Point::new(-5., -5., -5.), false),
+        ];
+        let light_position = Point::new(-10., -10., -10.);
         let w = World::default();
-        let p = Point::new(0., 10., 0.);
-        assert!(w.is_shadowed(p) == false);
-
-        let w = World::default();
-        let p = Point::new(10., -10., 10.);
-        assert!(w.is_shadowed(p) == true);
-
-        let w = World::default();
-        let p = Point::new(-20., 20., -20.);
-        assert!(w.is_shadowed(p) == false);
-
-        let w = World::default();
-        let p = Point::new(-2., 2., -2.);
-        assert!(w.is_shadowed(p) == false);
+        for (point, res) in cases {
+            assert!(w.is_shadowed(light_position, point) == res);
+        }
     }
 
     #[test]
@@ -279,7 +275,7 @@ mod tests {
             .equal_approx(Color::new(0.87677, 0.92436, 0.82918)));
 
         let mut w = World::default();
-        w.light = PointLight::new(Point::new(0., 0., 0.), Color::white());
+        w.light = PointLight::new(Point::new(0., 0., 0.), Color::white()).into();
         let lower = Plane::default()
             .with_transform(translation(0., -1., 0.))
             .with_material(Material::default().reflective(1.));

@@ -17,6 +17,7 @@ use crate::tuples::{Point, Vector};
 pub struct Cylinder {
     pub(super) transform: Matrix<4, 4>,
     pub(super) material: Material,
+    pub(super) shadow: bool,
     pub(super) min: f32,
     pub(super) max: f32,
     pub(super) closed: bool,
@@ -51,6 +52,19 @@ impl Cylinder {
 
     pub fn set_material(&mut self, m: Material) {
         self.material = m
+    }
+
+    pub fn with_shadow(mut self, shadow: bool) -> Self {
+        self.shadow = shadow;
+        self
+    }
+
+    pub fn get_shadow(&self) -> bool {
+        self.shadow
+    }
+
+    pub fn set_shadow(&mut self, s: bool) {
+        self.shadow = s
     }
 
     pub fn min(mut self, min: f32) -> Self {
@@ -157,6 +171,7 @@ impl Default for Cylinder {
         Self {
             transform: Matrix::identity(),
             material: Material::default(),
+            shadow: true,
             min: f32::NEG_INFINITY,
             max: f32::INFINITY,
             closed: false,

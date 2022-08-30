@@ -50,7 +50,7 @@ fn main() {
         shapes: vec![],
         groups: vec![],
         csgs: vec![Csg::new(CsgOp::Difference, outer, inner)],
-        light: PointLight::new(Point::new(-10., 10., -10.), Color::white()),
+        light: PointLight::new(Point::new(-10., 10., -10.), Color::white()).into(),
     };
 
     let mut camera = Camera::new(1280, 720, PI / 3.);

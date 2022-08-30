@@ -11,7 +11,7 @@ use serde::{de, Deserialize, Deserializer};
 use crate::camera::Camera;
 use crate::csg::{Csg, CsgChild, CsgOp};
 use crate::groups::Group;
-use crate::lights::PointLight;
+use crate::lights::{AreaLight, Light, PointLight};
 use crate::materials::Material;
 use crate::obj::parse_obj;
 use crate::patterns::{Checker, Gradient, Pattern, Ring, Striped, XyzRgb};
@@ -36,10 +36,12 @@ impl<'de> Deserialize<'de> for Scene {
         {
             return Err(de::Error::custom("Missing camera"));
         }
-        if !instructions
-            .iter()
-            .any(|i| matches!(i, Instruction::Add(Add::AddGear(AddGear::Light { .. }))))
-        {
+        if !instructions.iter().any(|i| {
+            matches!(
+                i,
+                Instruction::Add(Add::AddGear(AddGear::PointLight { .. }))
+            ) || matches!(i, Instruction::Add(Add::AddGear(AddGear::AreaLight { .. })))
+        }) {
             return Err(de::Error::custom("Missing light"));
         }
         Ok(Scene { instructions })
@@ -48,13 +50,13 @@ impl<'de> Deserialize<'de> for Scene {
 
 impl Scene {
     pub fn render(&self, out: impl Write, obj_files: &[PathBuf]) -> Result<(), Box<dyn Error>> {
-        let mut camera = None;
-        let mut light = None;
+        let mut camera: Option<Camera> = None;
+        let mut light: Option<Light> = None;
         let mut define_transforms = HashMap::<String, Vec<TransformSpec>>::new();
         let mut define_materials = HashMap::<String, Vec<MaterialSpec>>::new();
-        let mut shapes = Vec::new();
-        let mut groups = Vec::new();
-        let mut csgs = Vec::new();
+        let mut shapes: Vec<Shape> = Vec::new();
+        let mut groups: Vec<Group> = Vec::new();
+        let mut csgs: Vec<Csg> = Vec::new();
 
         for instruction in &self.instructions {
             match instruction {
@@ -73,8 +75,31 @@ impl Scene {
                         )
                 }
 
-                &Instruction::Add(Add::AddGear(AddGear::Light { at, intensity })) => {
-                    light = Some(PointLight::new(at.into(), intensity.into()))
+                &Instruction::Add(Add::AddGear(AddGear::PointLight { at, intensity })) => {
+                    light = Some(PointLight::new(at.into(), intensity.into()).into())
+                }
+
+                &Instruction::Add(Add::AddGear(AddGear::AreaLight {
+                    corner,
+                    uvec,
+                    vvec,
+                    usteps,
+                    vsteps,
+                    intensity,
+                })) => {
+                    light = Some(
+                        AreaLight::new(
+                            corner.into(),
+                            uvec.into(),
+                            usteps,
+                            vvec.into(),
+                            vsteps,
+                            intensity.into(),
+                            #[cfg(test)]
+                            vec![0.5],
+                        )
+                        .into(),
+                    )
                 }
 
                 Instruction::Define(Define {
@@ -180,8 +205,16 @@ pub enum Add {
 #[serde(tag = "add")]
 #[serde(rename_all = "kebab-case")]
 pub enum AddGear {
-    Light {
+    PointLight {
         at: [f32; 3],
+        intensity: [f32; 3],
+    },
+    AreaLight {
+        corner: [f32; 3],
+        uvec: [f32; 3],
+        vvec: [f32; 3],
+        usteps: usize,
+        vsteps: usize,
         intensity: [f32; 3],
     },
     #[serde(rename_all = "kebab-case")]
@@ -235,24 +268,28 @@ pub enum AddShape {
         #[serde(default, deserialize_with = "deser_transform")]
         transform: Option<Vec<TransformSpec>>,
         material: Option<MaterialSpec>,
+        shadow: Option<bool>,
     },
     Plane {
         extend: Option<Vec<String>>,
         #[serde(default, deserialize_with = "deser_transform")]
         transform: Option<Vec<TransformSpec>>,
         material: Option<MaterialSpec>,
+        shadow: Option<bool>,
     },
     Cube {
         extend: Option<Vec<String>>,
         #[serde(default, deserialize_with = "deser_transform")]
         transform: Option<Vec<TransformSpec>>,
         material: Option<MaterialSpec>,
+        shadow: Option<bool>,
     },
     Cylinder {
         extend: Option<Vec<String>>,
         #[serde(default, deserialize_with = "deser_transform")]
         transform: Option<Vec<TransformSpec>>,
         material: Option<MaterialSpec>,
+        shadow: Option<bool>,
         min: Option<f32>,
         max: Option<f32>,
         closed: Option<bool>,
@@ -262,6 +299,7 @@ pub enum AddShape {
         #[serde(default, deserialize_with = "deser_transform")]
         transform: Option<Vec<TransformSpec>>,
         material: Option<MaterialSpec>,
+        shadow: Option<bool>,
         min: Option<f32>,
         max: Option<f32>,
         closed: Option<bool>,
@@ -271,6 +309,7 @@ pub enum AddShape {
         #[serde(default, deserialize_with = "deser_transform")]
         transform: Option<Vec<TransformSpec>>,
         material: Option<MaterialSpec>,
+        shadow: Option<bool>,
         p1: [f32; 3],
         p2: [f32; 3],
         p3: [f32; 3],
@@ -280,6 +319,7 @@ pub enum AddShape {
         #[serde(default, deserialize_with = "deser_transform")]
         transform: Option<Vec<TransformSpec>>,
         material: Option<MaterialSpec>,
+        shadow: Option<bool>,
         p1: [f32; 3],
         p2: [f32; 3],
         p3: [f32; 3],
@@ -306,6 +346,7 @@ impl AddShape {
                 extend,
                 transform,
                 material,
+                shadow,
             } => {
                 let (transform, material) = make_transform_material(
                     transform.as_ref(),
@@ -318,6 +359,7 @@ impl AddShape {
                 Sphere::default()
                     .with_transform(transform)
                     .with_material(material)
+                    .with_shadow(shadow.unwrap_or(true))
                     .into()
             }
 
@@ -325,6 +367,7 @@ impl AddShape {
                 extend,
                 transform,
                 material,
+                shadow,
             } => {
                 let (transform, material) = make_transform_material(
                     transform.as_ref(),
@@ -337,6 +380,7 @@ impl AddShape {
                 Plane::default()
                     .with_transform(transform)
                     .with_material(material)
+                    .with_shadow(shadow.unwrap_or(true))
                     .into()
             }
 
@@ -344,6 +388,7 @@ impl AddShape {
                 extend,
                 transform,
                 material,
+                shadow,
             } => {
                 let (transform, material) = make_transform_material(
                     transform.as_ref(),
@@ -356,6 +401,7 @@ impl AddShape {
                 Cube::default()
                     .with_transform(transform)
                     .with_material(material)
+                    .with_shadow(shadow.unwrap_or(true))
                     .into()
             }
 
@@ -363,6 +409,7 @@ impl AddShape {
                 extend,
                 transform,
                 material,
+                shadow,
                 min,
                 max,
                 closed,
@@ -378,6 +425,7 @@ impl AddShape {
                 Cylinder::default()
                     .with_transform(transform)
                     .with_material(material)
+                    .with_shadow(shadow.unwrap_or(true))
                     .min(min.unwrap_or(f32::NEG_INFINITY))
                     .max(max.unwrap_or(f32::INFINITY))
                     .closed(closed.unwrap_or(false))
@@ -388,6 +436,7 @@ impl AddShape {
                 extend,
                 transform,
                 material,
+                shadow,
                 min,
                 max,
                 closed,
@@ -403,6 +452,7 @@ impl AddShape {
                 Cone::default()
                     .with_transform(transform)
                     .with_material(material)
+                    .with_shadow(shadow.unwrap_or(true))
                     .min(min.unwrap_or(f32::NEG_INFINITY))
                     .max(max.unwrap_or(f32::INFINITY))
                     .closed(closed.unwrap_or(false))
@@ -413,6 +463,7 @@ impl AddShape {
                 extend,
                 transform,
                 material,
+                shadow,
                 p1,
                 p2,
                 p3,
@@ -428,6 +479,7 @@ impl AddShape {
                 Triangle::new((*p1).into(), (*p2).into(), (*p3).into())
                     .with_transform(transform)
                     .with_material(material)
+                    .with_shadow(shadow.unwrap_or(true))
                     .into()
             }
 
@@ -435,6 +487,7 @@ impl AddShape {
                 extend,
                 transform,
                 material,
+                shadow,
                 p1,
                 p2,
                 p3,
@@ -460,6 +513,7 @@ impl AddShape {
                 )
                 .with_transform(transform)
                 .with_material(material)
+                .with_shadow(shadow.unwrap_or(true))
                 .into()
             }
 
@@ -575,24 +629,28 @@ pub enum CsgElem {
         #[serde(default, deserialize_with = "deser_transform")]
         transform: Option<Vec<TransformSpec>>,
         material: Option<MaterialSpec>,
+        shadow: Option<bool>,
     },
     Plane {
         extend: Option<Vec<String>>,
         #[serde(default, deserialize_with = "deser_transform")]
         transform: Option<Vec<TransformSpec>>,
         material: Option<MaterialSpec>,
+        shadow: Option<bool>,
     },
     Cube {
         extend: Option<Vec<String>>,
         #[serde(default, deserialize_with = "deser_transform")]
         transform: Option<Vec<TransformSpec>>,
         material: Option<MaterialSpec>,
+        shadow: Option<bool>,
     },
     Cylinder {
         extend: Option<Vec<String>>,
         #[serde(default, deserialize_with = "deser_transform")]
         transform: Option<Vec<TransformSpec>>,
         material: Option<MaterialSpec>,
+        shadow: Option<bool>,
         min: Option<f32>,
         max: Option<f32>,
         closed: Option<bool>,
@@ -602,6 +660,7 @@ pub enum CsgElem {
         #[serde(default, deserialize_with = "deser_transform")]
         transform: Option<Vec<TransformSpec>>,
         material: Option<MaterialSpec>,
+        shadow: Option<bool>,
         min: Option<f32>,
         max: Option<f32>,
         closed: Option<bool>,
@@ -611,6 +670,7 @@ pub enum CsgElem {
         #[serde(default, deserialize_with = "deser_transform")]
         transform: Option<Vec<TransformSpec>>,
         material: Option<MaterialSpec>,
+        shadow: Option<bool>,
         p1: [f32; 3],
         p2: [f32; 3],
         p3: [f32; 3],
@@ -620,6 +680,7 @@ pub enum CsgElem {
         #[serde(default, deserialize_with = "deser_transform")]
         transform: Option<Vec<TransformSpec>>,
         material: Option<MaterialSpec>,
+        shadow: Option<bool>,
         p1: [f32; 3],
         p2: [f32; 3],
         p3: [f32; 3],
@@ -664,36 +725,43 @@ impl From<CsgElem> for AddShape {
                 extend,
                 transform,
                 material,
+                shadow,
             } => Self::Sphere {
                 extend,
                 transform,
                 material,
+                shadow,
             },
 
             CsgElem::Plane {
                 extend,
                 transform,
                 material,
+                shadow,
             } => Self::Plane {
                 extend,
                 transform,
                 material,
+                shadow,
             },
 
             CsgElem::Cube {
                 extend,
                 transform,
                 material,
+                shadow,
             } => Self::Cube {
                 extend,
                 transform,
                 material,
+                shadow,
             },
 
             CsgElem::Cylinder {
                 extend,
                 transform,
                 material,
+                shadow,
                 min,
                 max,
                 closed,
@@ -701,6 +769,7 @@ impl From<CsgElem> for AddShape {
                 extend,
                 transform,
                 material,
+                shadow,
                 min,
                 max,
                 closed,
@@ -710,6 +779,7 @@ impl From<CsgElem> for AddShape {
                 extend,
                 transform,
                 material,
+                shadow,
                 min,
                 max,
                 closed,
@@ -717,6 +787,7 @@ impl From<CsgElem> for AddShape {
                 extend,
                 transform,
                 material,
+                shadow,
                 min,
                 max,
                 closed,
@@ -726,6 +797,7 @@ impl From<CsgElem> for AddShape {
                 extend,
                 transform,
                 material,
+                shadow,
                 p1,
                 p2,
                 p3,
@@ -733,6 +805,7 @@ impl From<CsgElem> for AddShape {
                 extend,
                 transform,
                 material,
+                shadow,
                 p1,
                 p2,
                 p3,
@@ -742,6 +815,7 @@ impl From<CsgElem> for AddShape {
                 extend,
                 transform,
                 material,
+                shadow,
                 p1,
                 p2,
                 p3,
@@ -752,6 +826,7 @@ impl From<CsgElem> for AddShape {
                 extend,
                 transform,
                 material,
+                shadow,
                 p1,
                 p2,
                 p3,
@@ -1115,7 +1190,7 @@ mod tests {
   from: [0.0, 1.5, 5.0]
   to: [0, 0, 0]
   up: [0, 1, 0]
-- add: light
+- add: point-light
   at: [-10, 10, -10]
   intensity: [1, 1, 1]
 - define: my-def
@@ -1135,6 +1210,7 @@ mod tests {
   extend: []
   transform: null
   material: null
+  shadow: false
 - add: group
   # extend: [my-def]
   transform: null

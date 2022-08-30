@@ -14,6 +14,7 @@ use crate::tuples::{Point, Vector};
 pub struct Triangle {
     pub(super) transform: Matrix<4, 4>,
     pub(super) material: Material,
+    pub(super) shadow: bool,
     pub(super) p1: Point,
     pub(super) p2: Point,
     pub(super) p3: Point,
@@ -34,6 +35,7 @@ impl Triangle {
         Self {
             transform: Matrix::identity(),
             material: Material::default(),
+            shadow: true,
             p1,
             p2,
             p3,
@@ -68,6 +70,19 @@ impl Triangle {
 
     pub fn set_material(&mut self, m: Material) {
         self.material = m
+    }
+
+    pub fn with_shadow(mut self, shadow: bool) -> Self {
+        self.shadow = shadow;
+        self
+    }
+
+    pub fn get_shadow(&self) -> bool {
+        self.shadow
+    }
+
+    pub fn set_shadow(&mut self, s: bool) {
+        self.shadow = s
     }
 
     pub fn local_normal_at(&self, _local_point: Point) -> Vector {

@@ -14,12 +14,12 @@
 # light sources
 # ======================================================
 
-- add: light
+- add: point-light
   at: [ 50, 100, -50 ]
   intensity: [ 1, 1, 1 ]
 
 # an optional second light for additional illumination
-# - add: light
+# - add: point-light
 #   at: [ -400, 50, -10 ]
 #   intensity: [ 0.2, 0.2, 0.2 ]
 

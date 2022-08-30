@@ -78,7 +78,7 @@ fn main() {
         shapes,
         groups: vec![],
         csgs: vec![],
-        light: PointLight::new(Point::new(-10., 10., -10.), Color::white()),
+        light: PointLight::new(Point::new(-10., 10., -10.), Color::white()).into(),
     };
 
     let camera = Camera::new(1280, 720, PI / 3.).with_transform(view_transform(

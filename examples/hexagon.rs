@@ -18,7 +18,7 @@ fn main() {
         shapes: vec![],
         csgs: vec![],
         groups,
-        light: PointLight::new(Point::new(-10., 10., -10.), Color::white()),
+        light: PointLight::new(Point::new(-10., 10., -10.), Color::white()).into(),
     };
 
     let mut camera = Camera::new(1280, 720, PI / 3.);

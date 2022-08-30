@@ -5,7 +5,7 @@
   from: [0, 1.5, 5]
   to: [0, 0.5, 0]
   up: [0, 1, 0]
-- add: light
+- add: point-light
   at: [-10, 10, 10]
   intensity: [1, 1, 1]
 - define: space_ship.obj
