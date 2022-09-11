@@ -2,7 +2,7 @@ use crate::csg::Csg;
 use crate::groups::Group;
 use crate::intersections::{Computations, Intersections};
 use crate::lights::{Light, PointLight};
-use crate::materials::{lighting, Material};
+use crate::materials::Material;
 use crate::rays::Ray;
 use crate::shapes::{Shape, Sphere};
 use crate::transformations::scaling;
@@ -61,8 +61,8 @@ impl World {
 
     pub fn shade_hit(&self, comps: Computations, remaining: u8) -> Color {
         let light_intensity = self.light.intensity_at(comps.over_point, self);
-        let surface = lighting(
-            comps.shape.get_material(),
+        let material = comps.shape.get_material();
+        let surface = material.lighting(
             comps.shape,
             self.light,
             comps.over_point,
@@ -74,7 +74,6 @@ impl World {
         let reflected = self.reflected_color(comps, remaining);
         let refracted = self.refracted_color(comps, remaining);
 
-        let material = comps.shape.get_material();
         if material.reflective > 0. && material.transparency > 0. {
             let reflectance = comps.schlick();
             surface + reflected * reflectance + refracted * (1. - reflectance)

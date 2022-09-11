@@ -77,102 +77,102 @@ impl Material {
         self.refractive_index = refractive_index;
         self
     }
-}
 
-pub fn lighting(
-    material: Material,
-    shape: Shape,
-    light: Light,
-    point: Point,
-    eyev: Vector,
-    normalv: Vector,
-    light_intensity: f32,
-) -> Color {
-    let color = match material.pattern {
-        Some(pattern) => pattern.pattern_at_shape(shape, point),
-        None => material.color,
-    };
+    pub fn lighting(
+        &self,
+        shape: Shape,
+        light: Light,
+        point: Point,
+        eyev: Vector,
+        normalv: Vector,
+        light_intensity: f32,
+    ) -> Color {
+        let color = match self.pattern {
+            Some(pattern) => pattern.pattern_at_shape(shape, point),
+            None => self.color,
+        };
 
-    // Combine the surface color with the light's color/intensity
-    let effective_color = color * light.intensity();
+        // Combine the surface color with the light's color/intensity
+        let effective_color = color * light.intensity();
 
-    // Compute the ambient contribution
-    let ambient = effective_color * material.ambient;
+        // Compute the ambient contribution
+        let ambient = effective_color * self.ambient;
 
-    match light {
-        Light::PointLight(_) => {
-            // Find the direction to the light source
-            let lightv = (light.position() - point).normalize();
+        match light {
+            Light::PointLight(_) => {
+                // Find the direction to the light source
+                let lightv = (light.position() - point).normalize();
 
-            // `light_dot_normal` represents the cosine of the angle between the light
-            // vector and the normal vector. A negative number means the light is on the
-            // other side of the surface.
-            let light_dot_normal = lightv.dot(normalv);
+                // `light_dot_normal` represents the cosine of the angle between the light
+                // vector and the normal vector. A negative number means the light is on the
+                // other side of the surface.
+                let light_dot_normal = lightv.dot(normalv);
 
-            let (diffuse, specular) = if light_dot_normal >= 0. {
-                // Compute the diffuse contribution
-                let diffuse = effective_color * material.diffuse * light_dot_normal;
+                let (diffuse, specular) = if light_dot_normal >= 0. {
+                    // Compute the diffuse contribution
+                    let diffuse = effective_color * self.diffuse * light_dot_normal;
 
-                // `reflect_dot_eye` represents the cosine of the angle between the
-                // reflection vector and the eye vector. A negative value means that the
-                // lights reflects away from the eye.
-                let reflectv = (-lightv).reflect(normalv);
-                let reflect_dot_eye = reflectv.dot(eyev);
+                    // `reflect_dot_eye` represents the cosine of the angle between the
+                    // reflection vector and the eye vector. A negative value means that the
+                    // lights reflects away from the eye.
+                    let reflectv = (-lightv).reflect(normalv);
+                    let reflect_dot_eye = reflectv.dot(eyev);
 
-                // Compute the specular contribution
-                let specular = if reflect_dot_eye > 0. {
-                    let factor = reflect_dot_eye.powf(material.shininess);
-                    light.intensity() * material.specular * factor
+                    // Compute the specular contribution
+                    let specular = if reflect_dot_eye > 0. {
+                        let factor = reflect_dot_eye.powf(self.shininess);
+                        light.intensity() * self.specular * factor
+                    } else {
+                        Color::black()
+                    };
+
+                    (diffuse, specular)
                 } else {
-                    Color::black()
+                    (Color::black(), Color::black())
                 };
 
-                (diffuse, specular)
-            } else {
-                (Color::black(), Color::black())
-            };
-
-            ambient + (diffuse + specular) * light_intensity
-        }
-        Light::AreaLight(light) => {
-            let mut sum = Color::black();
-
-            for u in 0..light.usteps() {
-                for v in 0..light.vsteps() {
-                    // Find the direction to the light source
-                    let light_pos = light.point_on_light(u, v);
-                    let lightv = (light_pos - point).normalize();
-
-                    // `light_dot_normal` represents the cosine of the angle between the
-                    // light vector and the normal vector. A negative number means the
-                    // light is on the other side of the surface.
-                    let light_dot_normal = lightv.dot(normalv);
-
-                    if light_dot_normal >= 0. {
-                        // Compute the diffuse contribution
-                        let diffuse = effective_color * material.diffuse * light_dot_normal;
-
-                        // `reflect_dot_eye` represents the cosine of the angle between
-                        // the reflection vector and the eye vector. A negative value
-                        // means that the lights reflects away from the eye.
-                        let reflectv = (-lightv).reflect(normalv);
-                        let reflect_dot_eye = reflectv.dot(eyev);
-
-                        // Compute the specular contribution
-                        let specular = if reflect_dot_eye > 0. {
-                            let factor = reflect_dot_eye.powf(material.shininess);
-                            light.intensity() * material.specular * factor
-                        } else {
-                            Color::black()
-                        };
-
-                        sum = sum + diffuse + specular;
-                    };
-                }
+                ambient + (diffuse + specular) * light_intensity
             }
+            Light::AreaLight(light) => {
+                let mut sum = Color::black();
 
-            sum = sum * (1. / light.nb_samples());
-            ambient + sum * light_intensity
+                for u in 0..light.usteps() {
+                    for v in 0..light.vsteps() {
+                        // Find the direction to the light source
+                        let light_pos = light.point_on_light(u, v);
+                        let lightv = (light_pos - point).normalize();
+
+                        // `light_dot_normal` represents the cosine of the angle between the
+                        // light vector and the normal vector. A negative number means the
+                        // light is on the other side of the surface.
+                        let light_dot_normal = lightv.dot(normalv);
+
+                        if light_dot_normal >= 0. {
+                            // Compute the diffuse contribution
+                            let diffuse = effective_color * self.diffuse * light_dot_normal;
+
+                            // `reflect_dot_eye` represents the cosine of the angle between
+                            // the reflection vector and the eye vector. A negative value
+                            // means that the lights reflects away from the eye.
+                            let reflectv = (-lightv).reflect(normalv);
+                            let reflect_dot_eye = reflectv.dot(eyev);
+
+                            // Compute the specular contribution
+                            let specular = if reflect_dot_eye > 0. {
+                                let factor = reflect_dot_eye.powf(self.shininess);
+                                light.intensity() * self.specular * factor
+                            } else {
+                                Color::black()
+                            };
+
+                            sum = sum + diffuse + specular;
+                        };
+                    }
+                }
+
+                sum = sum * (1. / light.nb_samples());
+                ambient + sum * light_intensity
+            }
         }
     }
 }
@@ -195,37 +195,37 @@ mod tests {
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
         let light = PointLight::new(Point::new(0., 0., -10.), Color::white());
-        let res = lighting(m, s, light.into(), pos, eyev, normalv, 1.);
+        let res = m.lighting(s, light.into(), pos, eyev, normalv, 1.);
         assert!(res == Color::new(1.9, 1.9, 1.9));
 
         let eyev = Vector::new(0., f32::sqrt(2.) / 2., -f32::sqrt(2.) / 2.);
         let normalv = Vector::new(0., 0., -1.);
         let light = PointLight::new(Point::new(0., 0., -10.), Color::white());
-        let res = lighting(m, s, light.into(), pos, eyev, normalv, 1.);
+        let res = m.lighting(s, light.into(), pos, eyev, normalv, 1.);
         assert!(res == Color::white());
 
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
         let light = PointLight::new(Point::new(0., 10., -10.), Color::white());
-        let res = lighting(m, s, light.into(), pos, eyev, normalv, 1.);
+        let res = m.lighting(s, light.into(), pos, eyev, normalv, 1.);
         assert!(res.equal_approx(Color::new(0.7364, 0.7364, 0.7364)));
 
         let eyev = Vector::new(0., -f32::sqrt(2.) / 2., -f32::sqrt(2.) / 2.);
         let normalv = Vector::new(0., 0., -1.);
         let light = PointLight::new(Point::new(0., 10., -10.), Color::white());
-        let res = lighting(m, s, light.into(), pos, eyev, normalv, 1.);
+        let res = m.lighting(s, light.into(), pos, eyev, normalv, 1.);
         assert!(res.equal_approx(Color::new(1.6364, 1.6364, 1.6364)));
 
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
         let light = PointLight::new(Point::new(0., 0., 10.), Color::white());
-        let res = lighting(m, s, light.into(), pos, eyev, normalv, 1.);
+        let res = m.lighting(s, light.into(), pos, eyev, normalv, 1.);
         assert!(res == Color::new(0.1, 0.1, 0.1));
 
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
         let light = PointLight::new(Point::new(0., 0., -10.), Color::white());
-        let res = lighting(m, s, light.into(), pos, eyev, normalv, 0.);
+        let res = m.lighting(s, light.into(), pos, eyev, normalv, 0.);
         assert!(res == Color::new(0.1, 0.1, 0.1));
     }
 
@@ -240,8 +240,8 @@ mod tests {
         let eyev = Vector::new(0., 0., -1.);
         let normalv = Vector::new(0., 0., -1.);
         let light = PointLight::new(Point::new(0., 0., -10.), Color::white()).into();
-        let c1 = lighting(m, s, light, Point::new(0.9, 0., 0.), eyev, normalv, 1.);
-        let c2 = lighting(m, s, light, Point::new(1.1, 0., 0.), eyev, normalv, 1.);
+        let c1 = m.lighting(s, light, Point::new(0.9, 0., 0.), eyev, normalv, 1.);
+        let c2 = m.lighting(s, light, Point::new(1.1, 0., 0.), eyev, normalv, 1.);
         assert!(c1 == Color::white());
         assert!(c2 == Color::black());
     }
@@ -266,8 +266,7 @@ mod tests {
         ];
         for (intensity, res) in cases {
             assert!(
-                lighting(
-                    w.shapes[0].get_material(),
+                w.shapes[0].get_material().lighting(
                     w.shapes[0],
                     w.light,
                     pt,
@@ -310,7 +309,9 @@ mod tests {
         for (pt, res) in cases {
             let eyev = -(eye - pt).normalize();
             let normalv = Vector::new(pt.x(), pt.y(), pt.z());
-            let lighting = lighting(s.get_material(), s, light.into(), pt, eyev, normalv, 1.);
+            let lighting = s
+                .get_material()
+                .lighting(s, light.into(), pt, eyev, normalv, 1.);
             assert!(lighting.equal_approx(res));
         }
     }
