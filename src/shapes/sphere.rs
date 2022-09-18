@@ -1,6 +1,7 @@
 use derivative::Derivative;
 use slotmap::Key;
 
+use crate::bounds::BoundingBox;
 use crate::groups::Group;
 use crate::intersections::Intersection;
 use crate::materials::Material;
@@ -80,6 +81,12 @@ impl Sphere {
 
     pub fn local_normal_at(&self, local_point: Point) -> Vector {
         local_point - Point::new(0., 0., 0.)
+    }
+
+    pub fn bounds(&self) -> BoundingBox {
+        BoundingBox::default()
+            .with_min(Point::new(-1., -1., -1.))
+            .with_max(Point::new(1., 1., 1.))
     }
 }
 

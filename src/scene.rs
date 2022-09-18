@@ -56,7 +56,16 @@ impl Scene {
         let mut define_materials = HashMap::<String, Vec<MaterialSpec>>::new();
         let mut shapes: Vec<Shape> = Vec::new();
         let mut groups: Vec<Group> = Vec::new();
+        let mut obj_by_name: HashMap<String, PathBuf> = HashMap::new();
         let mut csgs: Vec<Csg> = Vec::new();
+
+        for obj_file in obj_files {
+            let file_name = obj_file
+                .file_name()
+                .map(|name| name.to_string_lossy().to_string())
+                .ok_or("Invalid obj file")?;
+            obj_by_name.insert(file_name, obj_file.clone());
+        }
 
         for instruction in &self.instructions {
             match instruction {
@@ -145,32 +154,17 @@ impl Scene {
                 }
 
                 Instruction::Add(Add::AddShape(a @ AddShape::Group { .. })) => {
-                    groups.push(a.make_group(&define_transforms, &define_materials));
+                    groups.push(a.make_group(
+                        &define_transforms,
+                        &define_materials,
+                        &obj_by_name,
+                    )?);
                 }
 
                 Instruction::Add(Add::AddCsg(a @ AddCsg::Csg { .. })) => {
                     csgs.push(a.make_csg(&define_transforms, &define_materials));
                 }
             }
-        }
-
-        for obj_file in obj_files {
-            let file_name = obj_file
-                .file_name()
-                .map(|name| name.to_string_lossy().to_string())
-                .ok_or("Invalid obj file")?;
-
-            let mut final_transform = Transform::default();
-            if let Some(specs) = define_transforms.get(&file_name) {
-                for t in specs {
-                    final_transform = t.update(final_transform);
-                }
-            }
-
-            let reader = BufReader::new(File::open(obj_file)?);
-            let obj_group = parse_obj(reader)?.with_transform(final_transform);
-
-            groups.push(obj_group);
         }
 
         let world = World {
@@ -331,7 +325,11 @@ pub enum AddShape {
         extend: Option<Vec<String>>,
         #[serde(default, deserialize_with = "deser_transform")]
         transform: Option<Vec<TransformSpec>>,
+        material: Option<MaterialSpec>,
+        #[serde(default)]
         shapes: Vec<AddShape>,
+        obj: Option<String>,
+        divide: Option<usize>,
     },
 }
 
@@ -525,25 +523,46 @@ impl AddShape {
         &self,
         define_transforms: &HashMap<String, Vec<TransformSpec>>,
         define_materials: &HashMap<String, Vec<MaterialSpec>>,
-    ) -> Group {
+        obj_by_name: &HashMap<String, PathBuf>,
+    ) -> Result<Group, Box<dyn Error>> {
         match self {
             Self::Group {
                 extend,
                 transform,
+                material,
                 shapes,
+                obj,
+                divide,
             } => {
-                let (transform, _) = make_transform_material(
+                let (transform, material) = make_transform_material(
                     transform.as_ref(),
-                    None,
+                    material.as_ref(),
                     extend.as_ref(),
                     define_transforms,
                     define_materials,
                 );
-                let mut group = Group::default().with_transform(transform);
+
+                let mut group = if let Some(obj) = obj {
+                    let obj_file = obj_by_name
+                        .get(obj)
+                        .ok_or_else(|| format!("Couldn't find file named {obj}"))?;
+                    let reader = BufReader::new(File::open(obj_file)?);
+                    let obj_group = parse_obj(reader, material)?;
+                    obj_group
+                } else {
+                    Group::default()
+                }
+                .with_transform(transform);
+
+                if let Some(threshold) = divide {
+                    group.divide(*threshold);
+                }
+
                 for shape in shapes {
                     match shape {
                         a @ AddShape::Group { .. } => {
-                            let g = a.make_group(define_transforms, define_materials);
+                            let g =
+                                a.make_group(define_transforms, define_materials, obj_by_name)?;
                             group.add_child(g);
                         }
                         a => {
@@ -552,7 +571,8 @@ impl AddShape {
                         }
                     }
                 }
-                group
+
+                Ok(group)
             }
             _ => unreachable!(),
         }
@@ -1217,6 +1237,8 @@ mod tests {
   shapes:
     - add: cube
       extend: [my-def]
+- add: group
+  obj: file.obj
 ";
 
         let scene = serde_yaml::from_str::<Scene>(&scene);

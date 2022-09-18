@@ -1,6 +1,7 @@
 use derivative::Derivative;
 use slotmap::Key;
 
+use crate::bounds::BoundingBox;
 use crate::groups::Group;
 use crate::intersections::Intersection;
 use crate::materials::Material;
@@ -111,6 +112,14 @@ impl Triangle {
 
         let t = f * self.e2.dot(origin_cross_e1);
         Some(Intersection::new(t, self.into()))
+    }
+
+    pub fn bounds(&self) -> BoundingBox {
+        let mut bb = BoundingBox::default();
+        bb.add_point(self.p1);
+        bb.add_point(self.p2);
+        bb.add_point(self.p3);
+        bb
     }
 }
 

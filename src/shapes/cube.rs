@@ -2,6 +2,7 @@ use derivative::Derivative;
 use ordered_float::OrderedFloat;
 use slotmap::Key;
 
+use crate::bounds::BoundingBox;
 use crate::groups::Group;
 use crate::intersections::Intersection;
 use crate::materials::Material;
@@ -63,9 +64,9 @@ impl Cube {
         self.shadow = s
     }
 
-    fn check_axis(origin: f32, direction: f32) -> (f32, f32) {
-        let tmin_numerator = -1. - origin;
-        let tmax_numerator = 1. - origin;
+    pub(crate) fn check_axis(origin: f32, direction: f32, min: f32, max: f32) -> (f32, f32) {
+        let tmin_numerator = min - origin;
+        let tmax_numerator = max - origin;
 
         let (tmin, tmax) = if direction.abs() >= Self::EPSILON {
             (tmin_numerator / direction, tmax_numerator / direction)
@@ -84,9 +85,12 @@ impl Cube {
     }
 
     pub fn local_intersect(&self, local_ray: Ray) -> Option<[Intersection; 2]> {
-        let (xtmin, xtmax) = Self::check_axis(local_ray.origin.x(), local_ray.direction.x());
-        let (ytmin, ytmax) = Self::check_axis(local_ray.origin.y(), local_ray.direction.y());
-        let (ztmin, ztmax) = Self::check_axis(local_ray.origin.z(), local_ray.direction.z());
+        let (xtmin, xtmax) =
+            Self::check_axis(local_ray.origin.x(), local_ray.direction.x(), -1., 1.);
+        let (ytmin, ytmax) =
+            Self::check_axis(local_ray.origin.y(), local_ray.direction.y(), -1., 1.);
+        let (ztmin, ztmax) =
+            Self::check_axis(local_ray.origin.z(), local_ray.direction.z(), -1., 1.);
 
         let tmin = [xtmin, ytmin, ztmin]
             .into_iter()
@@ -126,6 +130,12 @@ impl Cube {
         } else {
             unreachable!()
         }
+    }
+
+    pub fn bounds(&self) -> BoundingBox {
+        BoundingBox::default()
+            .with_min(Point::new(-1., -1., -1.))
+            .with_max(Point::new(1., 1., 1.))
     }
 }
 

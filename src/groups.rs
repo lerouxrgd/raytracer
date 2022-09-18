@@ -5,6 +5,7 @@ use lazy_static::lazy_static;
 use parking_lot::RwLock;
 use slotmap::{Key, SlotMap};
 
+use crate::bounds::BoundingBox;
 use crate::intersections::Intersection;
 use crate::matrices::Matrix;
 use crate::rays::Ray;
@@ -98,7 +99,7 @@ impl Group {
     pub fn len(&self) -> usize {
         let groups = GROUPS.read_recursive();
         let group = groups.get(*self).unwrap();
-        group.shapes.len()
+        group.shapes.len() + group.children.len()
     }
 
     pub fn is_empty(&self) -> bool {
@@ -106,6 +107,10 @@ impl Group {
     }
 
     pub fn local_intersect(&self, local_ray: Ray) -> Vec<Intersection> {
+        if !self.bounds().intersects(local_ray) {
+            return vec![];
+        }
+
         let groups = GROUPS.read_recursive();
         let group = groups.get(*self).unwrap();
         let mut xs = vec![];
@@ -154,6 +159,120 @@ impl Group {
             parent.normal_to_world(normal)
         } else {
             normal
+        }
+    }
+
+    pub fn bounds(&self) -> BoundingBox {
+        let groups = GROUPS.read_recursive();
+        let group = groups.get(*self).unwrap();
+        let mut bb = BoundingBox::default();
+        for shape in &group.shapes {
+            bb.add_box(shape.parent_space_bounds());
+        }
+        for child in &group.children {
+            bb.add_box(child.bounds());
+        }
+        bb
+    }
+
+    fn partition(&mut self) -> (Group, Group) {
+        let (left_bb, right_bb) = self.bounds().split();
+
+        let mut groups = GROUPS.write();
+        let group = groups.get_mut(*self).unwrap();
+
+        // Split shapes
+
+        let mut remaining_shapes = vec![];
+        mem::swap(&mut remaining_shapes, &mut group.shapes);
+
+        let (left_shapes, remaining_shapes) = remaining_shapes
+            .into_iter()
+            .partition::<Vec<_>, _>(|shape| left_bb.contains_box(shape.parent_space_bounds()));
+        let (right_shapes, remaining_shapes) = remaining_shapes
+            .into_iter()
+            .partition::<Vec<_>, _>(|shape| right_bb.contains_box(shape.parent_space_bounds()));
+        group.shapes = remaining_shapes;
+
+        // Split children
+
+        let mut remaining_children = vec![];
+        mem::swap(&mut remaining_children, &mut group.children);
+        drop(groups);
+
+        let (left_children, remaining_children) = remaining_children
+            .into_iter()
+            .partition::<Vec<_>, _>(|group| left_bb.contains_box(group.bounds()));
+        let (right_children, remaining_children) = remaining_children
+            .into_iter()
+            .partition::<Vec<_>, _>(|group| right_bb.contains_box(group.bounds()));
+        GROUPS.write().get_mut(*self).unwrap().children = remaining_children;
+
+        // Make left group
+
+        let left_group = GROUPS.write().insert(GroupData {
+            transform: Matrix::identity(),
+            shapes: left_shapes,
+            children: left_children.clone(),
+            parent: Group::null(),
+        });
+
+        GROUPS
+            .write()
+            .get_mut(left_group)
+            .unwrap()
+            .shapes
+            .iter_mut()
+            .for_each(|shape| *shape.parent_mut() = left_group);
+
+        let mut groups = GROUPS.write();
+        for left_child in left_children {
+            groups.get_mut(left_child).unwrap().parent = left_group;
+        }
+        drop(groups);
+
+        // Make right group
+
+        let right_group = GROUPS.write().insert(GroupData {
+            transform: Matrix::identity(),
+            shapes: right_shapes,
+            children: right_children.clone(),
+            parent: Group::null(),
+        });
+
+        GROUPS
+            .write()
+            .get_mut(right_group)
+            .unwrap()
+            .shapes
+            .iter_mut()
+            .for_each(|shape| *shape.parent_mut() = right_group);
+
+        let mut groups = GROUPS.write();
+        for right_child in right_children {
+            groups.get_mut(right_child).unwrap().parent = right_group;
+        }
+        drop(groups);
+
+        // Return partitions
+
+        (left_group, right_group)
+    }
+
+    pub fn divide(&mut self, threshold: usize) {
+        if threshold <= self.len() {
+            let (left, right) = self.partition();
+            if !left.is_empty() {
+                self.add_child(left);
+            }
+            if !right.is_empty() {
+                self.add_child(right);
+            }
+        }
+
+        let children = GROUPS.read().get(*self).unwrap().children.clone();
+        for mut child in children {
+            child.divide(threshold);
         }
     }
 
@@ -296,5 +415,76 @@ mod tests {
             .get_shape(0)
             .normal_at(p, None)
             .equal_approx(Vector::new(0.2857, 0.4286, -0.8571)));
+    }
+
+    #[test]
+    fn group_bounding_box() {
+        let s = Sphere::default().with_transform(
+            Transform::default()
+                .scaling(2., 2., 2.)
+                .translation(2., 5., -3.),
+        );
+        let c = Cylinder::default()
+            .with_transform(
+                Transform::default()
+                    .scaling(0.5, 1., 0.5)
+                    .translation(-4., -1., 4.),
+            )
+            .min(-2.)
+            .max(2.);
+        let mut g = Group::default();
+        g.add_shape(s.into());
+        g.add_shape(c.into());
+        let bb = g.bounds();
+        assert!(bb.min == Point::new(-4.5, -3., -5.));
+        assert!(bb.max == Point::new(4., 7., 4.5));
+    }
+
+    #[test]
+    fn group_partitions() {
+        let s1 = Shape::sphere().with_transform(translation(-2., 0., 0.));
+        let s2 = Shape::sphere().with_transform(translation(2., 0., 0.));
+        let s3 = Shape::sphere();
+        let mut g = Group::default();
+        for s in [s1, s2, s3] {
+            g.add_shape(s);
+        }
+        let (left, right) = g.partition();
+        assert!(g.get_shape(0) == s3);
+        assert!(left.get_shape(0) == s1);
+        assert!(right.get_shape(0) == s2);
+
+        let s1 = Shape::sphere().with_transform(translation(-2., -2., 0.));
+        let s2 = Shape::sphere().with_transform(translation(-2., 2., 0.));
+        let s3 = Shape::sphere().with_transform(scaling(4., 4., 4.));
+        let mut g = Group::default();
+        for s in [s1, s2, s3] {
+            g.add_shape(s);
+        }
+        g.divide(1);
+        assert!(g.get_shape(0) == s3);
+        let sub = g.get_child(0);
+        assert!(sub.len() == 2);
+        assert!(sub.get_child(0).get_shape(0) == s1);
+        assert!(sub.get_child(1).get_shape(0) == s2);
+
+        let s1 = Shape::sphere().with_transform(translation(-2., 0., 0.));
+        let s2 = Shape::sphere().with_transform(translation(2., 1., 0.));
+        let s3 = Shape::sphere().with_transform(translation(2., -1., 0.));
+        let mut sub = Group::default();
+        for s in [s1, s2, s3] {
+            sub.add_shape(s);
+        }
+        let s4 = Shape::sphere();
+        let mut g = Group::default();
+        g.add_shape(s4);
+        g.add_child(sub);
+        g.divide(3);
+        assert!(g.get_child(0) == sub);
+        assert!(g.get_shape(0) == s4);
+        assert!(sub.len() == 2);
+        assert!(sub.get_child(0).get_shape(0) == s1);
+        assert!(sub.get_child(1).get_shape(0) == s2);
+        assert!(sub.get_child(1).get_shape(1) == s3);
     }
 }

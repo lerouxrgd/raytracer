@@ -1,4 +1,4 @@
-use std::ops::{Add, Deref, Div, Mul, Neg, Sub};
+use std::ops::{Add, Deref, DerefMut, Div, Mul, Neg, Sub};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Tuple([f32; 4]);
@@ -24,6 +24,12 @@ impl Deref for Tuple {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl DerefMut for Tuple {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
@@ -126,6 +132,26 @@ impl Point {
         self.0[3]
     }
 
+    pub fn with_x(mut self, x: f32) -> Self {
+        self.0[0] = x;
+        self
+    }
+
+    pub fn with_y(mut self, y: f32) -> Self {
+        self.0[1] = y;
+        self
+    }
+
+    pub fn with_z(mut self, z: f32) -> Self {
+        self.0[2] = z;
+        self
+    }
+
+    pub fn with_w(mut self, w: f32) -> Self {
+        self.0[3] = w;
+        self
+    }
+
     pub fn equal_approx(&self, other: Self) -> bool {
         self.0.equal_approx(other.0)
     }
@@ -134,6 +160,12 @@ impl Point {
 impl From<[f32; 3]> for Point {
     fn from(t: [f32; 3]) -> Self {
         Self::new(t[0], t[1], t[2])
+    }
+}
+
+impl From<Point> for [f32; 3] {
+    fn from(p: Point) -> Self {
+        [p.x(), p.y(), p.z()]
     }
 }
 

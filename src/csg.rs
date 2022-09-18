@@ -1,3 +1,4 @@
+use crate::bounds::BoundingBox;
 use crate::intersections::{Intersection, Intersections};
 use crate::rays::Ray;
 use crate::shapes::{Cone, Cube, Cylinder, Plane, Shape, SmoothTriangle, Triangle};
@@ -23,6 +24,10 @@ impl Csg {
     }
 
     pub fn local_intersect(&self, ray: Ray) -> Vec<Intersection> {
+        if !self.bounds().intersects(ray) {
+            return vec![];
+        }
+
         let mut xs = vec![];
         match (&self.left, &self.right) {
             (CsgChild::Shape(shape_l), CsgChild::Shape(shape_r)) => {
@@ -77,6 +82,26 @@ impl Csg {
             }
             (CsgChild::Csg(csg_l), CsgChild::Csg(csg_r)) => csg_l.includes(s) || csg_r.includes(s),
         }
+    }
+
+    pub fn bounds(&self) -> BoundingBox {
+        let mut bb = BoundingBox::default();
+        match (&self.left, &self.right) {
+            (CsgChild::Shape(shape_l), CsgChild::Shape(shape_r)) => {
+                bb.add_box(shape_l.parent_space_bounds());
+                bb.add_box(shape_r.parent_space_bounds());
+            }
+            (CsgChild::Shape(shape), CsgChild::Csg(csg))
+            | (CsgChild::Csg(csg), CsgChild::Shape(shape)) => {
+                bb.add_box(shape.parent_space_bounds());
+                bb.add_box(csg.bounds());
+            }
+            (CsgChild::Csg(csg_l), CsgChild::Csg(csg_r)) => {
+                bb.add_box(csg_l.bounds());
+                bb.add_box(csg_r.bounds());
+            }
+        }
+        bb
     }
 }
 
@@ -229,5 +254,15 @@ mod tests {
         assert!(xs[0].shape() == s1);
         assert!(xs[1].t() == 6.5);
         assert!(xs[1].shape() == s2);
+    }
+
+    #[test]
+    fn csg_bounding_box() {
+        let left = Shape::sphere();
+        let right = Shape::sphere().with_transform(translation(2., 3., 4.));
+        let csg = Csg::new(CsgOp::Difference, left, right);
+        let bb = csg.bounds();
+        assert!(bb.min == Point::new(-1., -1., -1.));
+        assert!(bb.max == Point::new(3., 4., 5.));
     }
 }

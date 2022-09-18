@@ -1,8 +1,10 @@
-use std::mem;
+use std::{cmp, mem};
 
 use derivative::Derivative;
+use ordered_float::OrderedFloat;
 use slotmap::Key;
 
+use crate::bounds::BoundingBox;
 use crate::groups::Group;
 use crate::intersections::Intersection;
 use crate::materials::Material;
@@ -175,6 +177,19 @@ impl Cone {
             }
             Vector::new(local_point.x(), y, local_point.z())
         }
+    }
+
+    pub fn bounds(&self) -> BoundingBox {
+        let a = self.min.abs();
+        let b = self.max.abs();
+        let limit: f32 = if a.is_infinite() || b.is_infinite() {
+            f32::INFINITY
+        } else {
+            cmp::max(OrderedFloat(a), OrderedFloat(b)).into()
+        };
+        BoundingBox::default()
+            .with_min(Point::new(-limit, self.min, -limit))
+            .with_max(Point::new(limit, self.max, limit))
     }
 }
 

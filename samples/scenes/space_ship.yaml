@@ -8,6 +8,7 @@
 - add: point-light
   at: [-10, 10, 10]
   intensity: [1, 1, 1]
-- define: space_ship.obj
+- add: group
+  obj: space_ship.obj
   transform:
     - [rotate-y, pi/4]

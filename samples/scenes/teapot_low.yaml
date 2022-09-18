@@ -8,7 +8,8 @@
 - add: point-light
   at: [-20, 30, 20]
   intensity: [1, 1, 1]
-- define: teapot_low.obj
+- add: group
+  obj: teapot_low.obj
   transform:
     - [rotate-x, -pi/2]
     - [rotate-y, pi/6]

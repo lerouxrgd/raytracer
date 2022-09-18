@@ -1,3 +1,4 @@
+pub mod bounds;
 pub mod camera;
 pub mod canvas;
 pub mod csg;

@@ -1,0 +1,255 @@
+# Download dragon.obj at http://raytracerchallenge.com/bonus/assets/dragon.zip
+
+# ======================================================
+# the camera
+# ======================================================
+
+- add: camera
+  width: 1200
+  height: 480
+  field-of-view: 1.2
+  from: [0, 2.5, -10]
+  to: [0, 1, 0]
+  up: [0, 1, 0]
+
+# ======================================================
+# lights
+# ======================================================
+
+- add: point-light
+  at: [-10, 100, -100]
+  intensity: [1, 1, 1]
+
+# - add: point-light
+#   at: [0, 100, 0]
+#   intensity: [0.1, 0.1, 0.1]
+
+# - add: point-light
+#   at: [100, 10, -25]
+#   intensity: [0.2, 0.2, 0.2]
+
+# - add: point-light
+#   at: [-100, 10, -25]
+#   intensity: [0.2, 0.2, 0.2]
+
+# ======================================================
+# definitions
+# ======================================================
+
+- define: raw-bbox
+  transform:
+    - [ translate, 1, 1, 1 ]
+    - [ scale, 3.73335, 2.5845, 1.6283 ]
+    - [ translate, -3.9863, -0.1217, -1.1820 ]
+
+- define: bbox
+  extend: [ raw-bbox ]
+  transform:
+    - [ translate, 0, 0.1217, 0 ]
+    - [ scale, 0.268, 0.268, 0.268 ]
+
+- define: pedestal
+  material:
+    color: [ 0.2, 0.2, 0.2 ]
+    ambient: 0
+    diffuse: 0.8
+    specular: 0
+    reflective: 0.2
+
+- define: dragon
+  transform:
+    - [ translate, 0, 0.1217, 0 ]
+    - [ scale, 0.268, 0.268, 0.268 ]
+
+# ======================================================
+# scene
+# ======================================================
+
+- add: group
+  transform:
+    - [ translate, 0, 2, 0 ]
+  shapes:
+    - add: cylinder
+      extend: [ pedestal ]
+      min: -0.15
+      max: 0
+      closed: true
+    - add: group
+      shapes:
+        - add: group
+          extend: [ dragon ]
+          obj: dragon.obj
+          divide: 10
+          material:
+            color: [ 1, 0, 0.1 ]
+            ambient: 0.1
+            diffuse: 0.6
+            specular: 0.3
+            shininess: 15
+        - add: cube
+          extend: [ bbox ]
+          shadow: false
+          material:
+            ambient: 0
+            diffuse: 0.4
+            specular: 0
+            transparency: 0.6
+            refractive-index: 1
+
+- add: group
+  transform:
+    - [ translate, 2, 1, -1 ]
+  shapes:
+    - add: cylinder
+      extend: [ pedestal ]
+      min: -0.15
+      max: 0
+      closed: true
+    - add: group
+      transform:
+        - [ rotate-y, 4 ]
+        - [ scale, 0.75, 0.75, 0.75 ]
+      shapes:
+        - add: group
+          extend: [ dragon ]
+          obj: dragon.obj
+          divide: 10
+          material:
+            color: [ 1, 0.5, 0.1 ]
+            ambient: 0.1
+            diffuse: 0.6
+            specular: 0.3
+            shininess: 15
+        - add: cube
+          extend: [ bbox ]
+          shadow: false
+          material:
+            ambient: 0
+            diffuse: 0.2
+            specular: 0
+            transparency: 0.8
+            refractive-index: 1
+
+- add: group
+  transform:
+    - [ translate, -2, .75, -1 ]
+  shapes:
+    - add: cylinder
+      extend: [ pedestal ]
+      min: -0.15
+      max: 0
+      closed: true
+    - add: group
+      transform:
+        - [ rotate-y, -0.4 ]
+        - [ scale, 0.75, 0.75, 0.75 ]
+      shapes:
+        - add: group
+          extend: [ dragon ]
+          obj: dragon.obj
+          divide: 10
+          material:
+            color: [ 0.9, 0.5, 0.1 ]
+            ambient: 0.1
+            diffuse: 0.6
+            specular: 0.3
+            shininess: 15
+        - add: cube
+          extend: [ bbox ]
+          shadow: false
+          material:
+            ambient: 0
+            diffuse: 0.2
+            specular: 0
+            transparency: 0.8
+            refractive-index: 1
+
+- add: group
+  transform:
+    - [ translate, -4, 0, -2 ]
+  shapes:
+    - add: cylinder
+      extend: [ pedestal ]
+      min: -0.15
+      max: 0
+      closed: true
+    - add: group
+      transform:
+        - [ rotate-y, -0.2 ]
+        - [ scale, 0.5, 0.5, 0.5 ]
+      shapes:
+        - add: group
+          extend: [ dragon ]
+          obj: dragon.obj
+          divide: 10
+          material:
+            color: [ 1, 0.9, 0.1 ]
+            ambient: 0.1
+            diffuse: 0.6
+            specular: 0.3
+            shininess: 15
+        - add: cube
+          extend: [ bbox ]
+          shadow: false
+          material:
+            ambient: 0
+            diffuse: 0.1
+            specular: 0
+            transparency: 0.9
+            refractive-index: 1
+
+- add: group
+  transform:
+    - [ translate, 4, 0, -2 ]
+  shapes:
+    - add: cylinder
+      extend: [ pedestal ]
+      min: -0.15
+      max: 0
+      closed: true
+    - add: group
+      transform:
+        - [ rotate-y, 3.3 ]
+        - [ scale, 0.5, 0.5, 0.5 ]
+      shapes:
+        - add: group
+          extend: [ dragon ]
+          obj: dragon.obj
+          divide: 10
+          material:
+            color: [ 0.9, 1, 0.1 ]
+            ambient: 0.1
+            diffuse: 0.6
+            specular: 0.3
+            shininess: 15
+        - add: cube
+          extend: [ bbox ]
+          shadow: false
+          material:
+            ambient: 0
+            diffuse: 0.1
+            specular: 0
+            transparency: 0.9
+            refractive-index: 1
+
+- add: group
+  transform:
+    - [ translate, 0, 0.5, -4 ]
+  shapes:
+    - add: cylinder
+      extend: [ pedestal ]
+      min: -0.15
+      max: 0
+      closed: true
+    - add: group
+      extend: [ dragon ]
+      obj: dragon.obj
+      divide: 10
+      material:
+        color: [ 1, 1, 1 ]
+        ambient: 0.1
+        diffuse: 0.6
+        specular: 0.3
+        shininess: 15
+      transform:
+        - [ rotate-y, 3.1415 ]

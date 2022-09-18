@@ -8,6 +8,7 @@ mod triangle;
 
 use slotmap::Key;
 
+use crate::bounds::BoundingBox;
 use crate::groups::Group;
 use crate::intersections::Intersection;
 use crate::materials::Material;
@@ -300,5 +301,40 @@ impl Shape {
             | &Self::SmoothTriangle(SmoothTriangle { shadow, .. })
             | &Self::Cube(Cube { shadow, .. }) => shadow,
         }
+    }
+
+    pub fn bounds(&self) -> BoundingBox {
+        match *self {
+            Self::Sphere(s) => s.bounds(),
+            Self::Plane(s) => s.bounds(),
+            Self::Cylinder(s) => s.bounds(),
+            Self::Cone(s) => s.bounds(),
+            Self::Triangle(s) => s.bounds(),
+            Self::SmoothTriangle(s) => s.bounds(),
+            Self::Cube(s) => s.bounds(),
+        }
+    }
+
+    pub fn parent_space_bounds(&self) -> BoundingBox {
+        self.bounds().transform(self.get_transform())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::transformations::Transform;
+
+    use super::*;
+
+    #[test]
+    fn shape_bounding_box() {
+        let s = Shape::sphere().with_transform(
+            Transform::default()
+                .scaling(0.5, 2., 4.)
+                .translation(1., -3., 5.),
+        );
+        let bb = s.parent_space_bounds();
+        assert!(bb.min == Point::new(0.5, -5., 1.));
+        assert!(bb.max == Point::new(1.5, -1., 9.));
     }
 }

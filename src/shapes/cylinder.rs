@@ -3,6 +3,7 @@ use std::mem;
 use derivative::Derivative;
 use slotmap::Key;
 
+use crate::bounds::BoundingBox;
 use crate::groups::Group;
 use crate::intersections::Intersection;
 use crate::materials::Material;
@@ -163,6 +164,12 @@ impl Cylinder {
         } else {
             Vector::new(local_point.x(), 0., local_point.z())
         }
+    }
+
+    pub fn bounds(&self) -> BoundingBox {
+        BoundingBox::default()
+            .with_min(Point::new(-1., self.min, -1.))
+            .with_max(Point::new(1., self.max, 1.))
     }
 }
 

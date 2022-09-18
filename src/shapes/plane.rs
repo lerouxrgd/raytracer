@@ -1,6 +1,7 @@
 use derivative::Derivative;
 use slotmap::Key;
 
+use crate::bounds::BoundingBox;
 use crate::groups::Group;
 use crate::intersections::Intersection;
 use crate::materials::Material;
@@ -73,6 +74,12 @@ impl Plane {
 
     pub fn local_normal_at(&self, _local_point: Point) -> Vector {
         Vector::new(0., 1., 0.)
+    }
+
+    pub fn bounds(&self) -> BoundingBox {
+        BoundingBox::default()
+            .with_min(Point::new(f32::NEG_INFINITY, 0., f32::NEG_INFINITY))
+            .with_max(Point::new(f32::INFINITY, 0., f32::INFINITY))
     }
 }
 
