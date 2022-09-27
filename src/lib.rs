@@ -14,5 +14,4 @@ pub mod scene;
 pub mod shapes;
 pub mod transformations;
 pub mod tuples;
-pub mod wavefront;
 pub mod world;

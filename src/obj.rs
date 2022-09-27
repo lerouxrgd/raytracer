@@ -4,7 +4,6 @@ use crate::groups::Group;
 use crate::materials::Material;
 use crate::shapes::{SmoothTriangle, Triangle};
 use crate::tuples::{Point, Vector};
-use crate::wavefront;
 
 pub fn parse_obj<R: Read>(reader: R, material: Material) -> Result<Group, wavefront::Error> {
     let obj = wavefront::Obj::from_reader(reader)?;

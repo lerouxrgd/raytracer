@@ -547,8 +547,7 @@ impl AddShape {
                         .get(obj)
                         .ok_or_else(|| format!("Couldn't find file named {obj}"))?;
                     let reader = BufReader::new(File::open(obj_file)?);
-                    let obj_group = parse_obj(reader, material)?;
-                    obj_group
+                    parse_obj(reader, material)?
                 } else {
                     Group::default()
                 }
