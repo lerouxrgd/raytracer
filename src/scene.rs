@@ -1,23 +1,31 @@
-#![allow(clippy::large_enum_variant)]
-
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
 use std::io::{BufReader, Write};
 use std::path::PathBuf;
 
+use lazy_static::lazy_static;
+use parking_lot::RwLock;
 use serde::{de, Deserialize, Deserializer};
 
 use crate::camera::Camera;
+use crate::canvas::Canvas;
 use crate::csg::{Csg, CsgChild, CsgOp};
 use crate::groups::Group;
 use crate::lights::{AreaLight, Light, PointLight};
 use crate::materials::Material;
 use crate::obj::parse_obj;
-use crate::patterns::{Checker, Gradient, Pattern, Ring, Striped, XyzRgb};
+use crate::patterns::{
+    Checker, CubeMap, Gradient, Pattern, Ring, Striped, TextureMap, UvAlignCheck, UvChecker,
+    UvImage, UvMapping, UvPattern, XyzRgb,
+};
 use crate::shapes::{Cone, Cube, Cylinder, Plane, Shape, SmoothTriangle, Sphere, Triangle};
 use crate::transformations::{view_transform, Transform};
 use crate::world::World;
+
+lazy_static! {
+    static ref IMAGE_BY_NAME: RwLock<HashMap<String, UvImage>> = RwLock::new(HashMap::new());
+}
 
 #[derive(Debug, Clone)]
 pub struct Scene {
@@ -49,7 +57,12 @@ impl<'de> Deserialize<'de> for Scene {
 }
 
 impl Scene {
-    pub fn render(&self, out: impl Write, obj_files: &[PathBuf]) -> Result<(), Box<dyn Error>> {
+    pub fn render(
+        &self,
+        out: impl Write,
+        obj_files: &[PathBuf],
+        ppm_files: &[PathBuf],
+    ) -> Result<(), Box<dyn Error>> {
         let mut camera: Option<Camera> = None;
         let mut light: Option<Light> = None;
         let mut define_transforms = HashMap::<String, Vec<TransformSpec>>::new();
@@ -65,6 +78,18 @@ impl Scene {
                 .map(|name| name.to_string_lossy().to_string())
                 .ok_or("Invalid obj file")?;
             obj_by_name.insert(file_name, obj_file.clone());
+        }
+
+        for ppm_file in ppm_files {
+            let file_name = ppm_file
+                .file_name()
+                .map(|name| name.to_string_lossy().to_string())
+                .ok_or("Invalid ppm file")?;
+            let reader = BufReader::new(File::open(ppm_file)?);
+            let canvas = Canvas::from_ppm(reader)?;
+            IMAGE_BY_NAME
+                .write()
+                .insert(file_name, UvImage::new(canvas));
         }
 
         for instruction in &self.instructions {
@@ -180,6 +205,7 @@ impl Scene {
     }
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 pub enum Instruction {
@@ -187,6 +213,7 @@ pub enum Instruction {
     Define(Define),
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 pub enum Add {
@@ -1129,6 +1156,7 @@ impl MaterialSpec {
     }
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "kind")]
 #[serde(rename_all = "kebab-case")]
@@ -1157,6 +1185,24 @@ pub enum PatternSpec {
         #[serde(default, deserialize_with = "deser_transform")]
         transform: Option<Vec<TransformSpec>>,
     },
+    #[serde(rename_all = "kebab-case")]
+    TextureMap {
+        #[serde(default, deserialize_with = "deser_transform")]
+        transform: Option<Vec<TransformSpec>>,
+        uv_mapping: UvMapping,
+        uv_pattern: UvPatternSpec,
+    },
+    #[serde(rename_all = "kebab-case")]
+    CubeMap {
+        #[serde(default, deserialize_with = "deser_transform")]
+        transform: Option<Vec<TransformSpec>>,
+        left: UvPatternSpec,
+        front: UvPatternSpec,
+        right: UvPatternSpec,
+        back: UvPatternSpec,
+        up: UvPatternSpec,
+        down: UvPatternSpec,
+    },
 }
 
 impl From<&PatternSpec> for Pattern {
@@ -1167,7 +1213,9 @@ impl From<&PatternSpec> for Pattern {
             | PatternSpec::Gradient { transform, .. }
             | PatternSpec::Ring { transform, .. }
             | PatternSpec::Checker { transform, .. }
-            | PatternSpec::XyzRgb { transform, .. } => {
+            | PatternSpec::XyzRgb { transform, .. }
+            | PatternSpec::TextureMap { transform, .. }
+            | PatternSpec::CubeMap { transform, .. } => {
                 if let Some(specs) = transform {
                     for op in specs {
                         base_transform = op.update(base_transform);
@@ -1191,6 +1239,77 @@ impl From<&PatternSpec> for Pattern {
                 .with_transform(base_transform)
                 .into(),
             PatternSpec::XyzRgb { .. } => XyzRgb::new().with_transform(base_transform).into(),
+            PatternSpec::TextureMap {
+                uv_mapping,
+                uv_pattern,
+                ..
+            } => TextureMap::new(uv_pattern.into(), *uv_mapping)
+                .with_transform(base_transform)
+                .into(),
+            PatternSpec::CubeMap {
+                left,
+                front,
+                right,
+                back,
+                up,
+                down,
+                ..
+            } => CubeMap::new(
+                left.into(),
+                front.into(),
+                right.into(),
+                back.into(),
+                up.into(),
+                down.into(),
+            )
+            .with_transform(base_transform)
+            .into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "kind")]
+#[serde(rename_all = "kebab-case")]
+pub enum UvPatternSpec {
+    Checker {
+        width: f32,
+        height: f32,
+        colors: [[f32; 3]; 2],
+    },
+    AlignCheck {
+        main: [f32; 3],
+        ul: [f32; 3],
+        ur: [f32; 3],
+        bl: [f32; 3],
+        br: [f32; 3],
+    },
+    Image {
+        ppm: String,
+    },
+}
+
+impl From<&UvPatternSpec> for UvPattern {
+    fn from(source: &UvPatternSpec) -> Self {
+        match source {
+            UvPatternSpec::Checker {
+                width,
+                height,
+                colors,
+            } => UvChecker::new(*width, *height, colors[0].into(), colors[1].into()).into(),
+            UvPatternSpec::AlignCheck {
+                main,
+                ul,
+                ur,
+                bl,
+                br,
+            } => UvAlignCheck::new(main.into(), ul.into(), ur.into(), bl.into(), br.into()).into(),
+
+            UvPatternSpec::Image { ppm } => (*IMAGE_BY_NAME
+                .read()
+                .get(ppm)
+                .unwrap_or_else(|| panic!("Couldn't find ppm file named: {ppm}")))
+            .into(),
         }
     }
 }

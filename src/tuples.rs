@@ -324,6 +324,34 @@ impl Color {
         Self::new(0., 0., 0.)
     }
 
+    pub fn red() -> Self {
+        Self::new(1., 0., 0.)
+    }
+
+    pub fn green() -> Self {
+        Self::new(0., 1., 0.)
+    }
+
+    pub fn blue() -> Self {
+        Self::new(0., 0., 1.)
+    }
+
+    pub fn yellow() -> Self {
+        Self::new(1., 1., 0.)
+    }
+
+    pub fn cyan() -> Self {
+        Self::new(0., 1., 1.)
+    }
+
+    pub fn purple() -> Self {
+        Self::new(1., 0., 1.)
+    }
+
+    pub fn brown() -> Self {
+        Self::new(1., 0.5, 0.)
+    }
+
     pub fn r(&self) -> f32 {
         self.0[0]
     }
@@ -355,6 +383,12 @@ impl Color {
 
 impl From<[f32; 3]> for Color {
     fn from(t: [f32; 3]) -> Self {
+        Self::new(t[0], t[1], t[2])
+    }
+}
+
+impl From<&[f32; 3]> for Color {
+    fn from(t: &[f32; 3]) -> Self {
         Self::new(t[0], t[1], t[2])
     }
 }

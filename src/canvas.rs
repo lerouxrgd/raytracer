@@ -1,9 +1,8 @@
-use std::io::Write;
+use std::error::Error;
+use std::io::{BufRead, Seek, Write};
 
-use image::{
-    codecs::pnm::{PixmapHeader, PnmEncoder, SampleEncoding},
-    ColorType, Rgb32FImage,
-};
+use image::codecs::pnm::{PixmapHeader, PnmDecoder, PnmEncoder, SampleEncoding};
+use image::{ColorType, ImageFormat, Rgb32FImage};
 
 use crate::tuples::Color;
 
@@ -62,6 +61,29 @@ impl Canvas {
             )
             .ok();
     }
+
+    pub fn from_ppm<R>(reader: R) -> Result<Self, Box<dyn Error>>
+    where
+        R: BufRead + Seek,
+    {
+        let (mut reader, header) = PnmDecoder::new(reader)?.into_inner();
+        reader.rewind()?;
+
+        let max_val = header.maximal_sample() as f32;
+        let mut buffer = Rgb32FImage::new(header.width(), header.height());
+
+        let pixels = image::io::Reader::with_format(reader, ImageFormat::Pnm)
+            .decode()?
+            .into_rgb8();
+
+        for (x, y, rgb) in pixels.enumerate_pixels() {
+            let (r, g, b) = (rgb.0[0], rgb.0[1], rgb.0[2]);
+            let (r, g, b) = (r as f32 / max_val, g as f32 / max_val, b as f32 / max_val);
+            buffer.put_pixel(x, y, image::Rgb([r, g, b]));
+        }
+
+        Ok(Self { buffer })
+    }
 }
 
 impl From<Color> for image::Rgb<f32> {
@@ -98,7 +120,7 @@ mod tests {
     }
 
     #[test]
-    fn canvas_ppm() {
+    fn canvas_to_ppm() {
         let mut canvas = Canvas::new(5, 3);
         canvas.write_pixel(0, 0, Color::new(1.5, 0., 0.));
         canvas.write_pixel(2, 1, Color::new(0., 0.5, 0.));
@@ -108,5 +130,18 @@ mod tests {
         canvas.to_ppm(&mut out);
         let content = String::from_utf8(out.into_inner());
         assert!(content.is_ok());
+    }
+
+    #[test]
+    fn canvas_from_ppm() {
+        let ppm_data = b"P3
+2 2
+100
+100 100 100  50 50 50
+75 50 25  0 0 0
+";
+        let reader = Cursor::new(ppm_data);
+        let canvas = Canvas::from_ppm(reader).unwrap();
+        assert!(dbg!(canvas.pixel_at(0, 1)) == Color::new(0.75, 0.5, 0.25));
     }
 }

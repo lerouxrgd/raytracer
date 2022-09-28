@@ -1,0 +1,31 @@
+- add: camera
+  width: 400
+  height: 400
+  field-of-view: 0.5
+  from: [0, 0, -5]
+  to: [0, 0, 0]
+  up: [0, 1, 0]
+
+- add: point-light
+  at: [-10, 10, -10]
+  intensity: [1, 1, 1]
+
+- add: sphere
+  material:
+    pattern:
+      kind: texture-map
+      uv-mapping: spherical
+      uv-pattern:
+        kind: checker
+        # If you want your checkers to look "square" on the sphere, be sure and set the
+        # width to twice the height. This is because of how the spherical map isimplemented.
+        # While both u and v go from 0 to 1, v maps 1 to π, but u maps 1 to 2π.
+        width: 20
+        height: 10
+        colors:
+          - [0, 0.5, 0]
+          - [1, 1, 1]
+    specular: 0.4
+    ambient: 0.1
+    shininess: 10
+    diffuse: 0.6
