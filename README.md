@@ -4,17 +4,17 @@ Rust implementation for [The Ray Tracer Challenge](http://raytracerchallenge.com
 
 ## Usage
 
-```sh
+```text
 The Ray Tracer Challenge CLI
 
-USAGE:
-    raytracer [OPTIONS] --scene <FILE>
+Usage: raytracer [OPTIONS] --scene <FILE>
 
-OPTIONS:
-        --scene <FILE>    A yaml description of the scene to render
-        --obj <FILE>      Optional obj models to add to the scene
-        --out <OUT>       Optional output ppm file, defaults to stdout
-    -h, --help            Print help information
+Options:
+      --scene <FILE>  A yaml description of the scene to render
+      --obj <FILE>    Optional obj models to add to the scene
+      --out <OUT>     Optional output ppm file, defaults to stdout
+      --ppm <FILE>    Optional ppm textures to use as material
+  -h, --help
 ```
 
 Note that multiple `obj` models can be added/combined in a scene.

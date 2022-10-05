@@ -4,7 +4,7 @@ version = "1.3.0"
 edition = "2021"
 
 [dependencies]
-clap = {version = "3", features = ["derive"] }
+clap = {version = "4", features = ["derive"] }
 derivative = "2"
 image = { version = "0.24", default-features = false, features = ["pnm"]}
 lazy_static = "1"
