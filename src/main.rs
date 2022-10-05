@@ -18,7 +18,7 @@ struct Args {
     #[clap(long, value_name = "FILE", display_order = 3)]
     ppm: Option<Vec<PathBuf>>,
     /// Optional output ppm file, defaults to stdout
-    #[clap(long, display_order = 3)]
+    #[clap(long, display_order = 4)]
     out: Option<PathBuf>,
 }
 
