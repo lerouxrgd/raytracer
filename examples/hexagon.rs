@@ -20,6 +20,7 @@ fn main() {
         csgs: vec![],
         groups: vec![h],
         light: PointLight::new(Point::new(-10., 10., -10.), Color::white()).into(),
+        ..Default::default()
     };
 
     let mut camera = Camera::new(1280, 720, PI / 3.);

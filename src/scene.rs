@@ -196,6 +196,7 @@ impl Scene {
             groups,
             csgs,
             light: light.unwrap(),
+            ..Default::default()
         };
         let canvas = camera.unwrap().render(&world);
 

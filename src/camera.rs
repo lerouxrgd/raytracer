@@ -72,7 +72,7 @@ impl Camera {
             .into_par_iter()
             .map(|(px, py)| {
                 let ray = self.ray_for_pixel(px, py);
-                let color = world.color_at(ray, 4);
+                let color = world.color_at(ray, world.recursion_limit);
                 (px, py, color)
             })
             .collect::<Vec<_>>()

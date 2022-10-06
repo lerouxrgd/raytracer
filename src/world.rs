@@ -14,6 +14,7 @@ pub struct World {
     pub shapes: Vec<Shape>,
     pub groups: Vec<Group>,
     pub csgs: Vec<Csg>,
+    pub recursion_limit: u8,
 }
 
 impl Default for World {
@@ -34,6 +35,7 @@ impl Default for World {
             shapes: vec![s1.into(), s2.into()],
             groups: vec![],
             csgs: vec![],
+            recursion_limit: 4,
         }
     }
 }
