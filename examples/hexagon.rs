@@ -8,16 +8,17 @@ use raytracer::tuples::{Color, Point, Vector};
 use raytracer::world::World;
 
 fn main() {
-    let groups = vec![hexagon(
+    let mut h = hexagon(
         Transform::default()
             .rotation_x(PI / 3.0)
             .translation(0.0, 0.75, 0.0),
-    )];
+    );
+    h.cache_bounds();
 
     let world = World {
         shapes: vec![],
         csgs: vec![],
-        groups,
+        groups: vec![h],
         light: PointLight::new(Point::new(-10., 10., -10.), Color::white()).into(),
     };
 

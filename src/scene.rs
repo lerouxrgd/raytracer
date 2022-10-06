@@ -179,11 +179,10 @@ impl Scene {
                 }
 
                 Instruction::Add(Add::AddShape(a @ AddShape::Group { .. })) => {
-                    groups.push(a.make_group(
-                        &define_transforms,
-                        &define_materials,
-                        &obj_by_name,
-                    )?);
+                    let mut group =
+                        a.make_group(&define_transforms, &define_materials, &obj_by_name)?;
+                    group.cache_bounds();
+                    groups.push(group);
                 }
 
                 Instruction::Add(Add::AddCsg(a @ AddCsg::Csg { .. })) => {

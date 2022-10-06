@@ -22,6 +22,7 @@ struct GroupData {
     shapes: Vec<Shape>,
     children: Vec<Group>,
     parent: Group,
+    bounds: Option<BoundingBox>,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
@@ -165,14 +166,33 @@ impl Group {
     pub fn bounds(&self) -> BoundingBox {
         let groups = GROUPS.read_recursive();
         let group = groups.get(*self).unwrap();
+        if let Some(bb) = group.bounds {
+            bb
+        } else {
+            Self::make_bounds(group)
+        }
+    }
+
+    fn make_bounds(group: &GroupData) -> BoundingBox {
         let mut bb = BoundingBox::default();
         for shape in &group.shapes {
             bb.add_box(shape.parent_space_bounds());
         }
         for child in &group.children {
+            if group.parent.is_null() {
+                bb = bb.transform(group.transform);
+            }
             bb.add_box(child.bounds());
         }
         bb
+    }
+
+    pub fn cache_bounds(&mut self) {
+        let groups = GROUPS.read_recursive();
+        let group = groups.get(*self).unwrap();
+        let bb = Self::make_bounds(group);
+        drop(groups);
+        GROUPS.write().get_mut(*self).unwrap().bounds = Some(bb);
     }
 
     fn partition(&mut self) -> (Group, Group) {
@@ -215,6 +235,7 @@ impl Group {
             shapes: left_shapes,
             children: left_children.clone(),
             parent: Group::null(),
+            bounds: None,
         });
 
         GROUPS
@@ -238,6 +259,7 @@ impl Group {
             shapes: right_shapes,
             children: right_children.clone(),
             parent: Group::null(),
+            bounds: None,
         });
 
         GROUPS
@@ -296,6 +318,7 @@ impl Default for Group {
             shapes: vec![],
             children: vec![],
             parent: Group::null(),
+            bounds: None,
         };
         let handle = GROUPS.write().insert(group);
         handle
