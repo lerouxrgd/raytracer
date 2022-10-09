@@ -177,7 +177,7 @@ mod tests {
         ];
         let w = World::default();
         for (point, res) in cases {
-            assert!(w.light.intensity_at(point, &w) == res);
+            assert!(w.lights[0].intensity_at(point, &w) == res);
         }
     }
 

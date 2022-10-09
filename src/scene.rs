@@ -64,7 +64,7 @@ impl Scene {
         ppm_files: &[PathBuf],
     ) -> Result<(), Box<dyn Error>> {
         let mut camera: Option<Camera> = None;
-        let mut light: Option<Light> = None;
+        let mut lights: Vec<Light> = Vec::new();
         let mut define_transforms = HashMap::<String, Vec<TransformSpec>>::new();
         let mut define_materials = HashMap::<String, Vec<MaterialSpec>>::new();
         let mut shapes: Vec<Shape> = Vec::new();
@@ -110,7 +110,7 @@ impl Scene {
                 }
 
                 &Instruction::Add(Add::AddGear(AddGear::PointLight { at, intensity })) => {
-                    light = Some(PointLight::new(at.into(), intensity.into()).into())
+                    lights.push(PointLight::new(at.into(), intensity.into()).into());
                 }
 
                 &Instruction::Add(Add::AddGear(AddGear::AreaLight {
@@ -121,7 +121,7 @@ impl Scene {
                     vsteps,
                     intensity,
                 })) => {
-                    light = Some(
+                    lights.push(
                         AreaLight::new(
                             corner.into(),
                             uvec.into(),
@@ -133,7 +133,7 @@ impl Scene {
                             vec![0.5],
                         )
                         .into(),
-                    )
+                    );
                 }
 
                 Instruction::Define(Define {
@@ -195,7 +195,7 @@ impl Scene {
             shapes,
             groups,
             csgs,
-            light: light.unwrap(),
+            lights,
             ..Default::default()
         };
         let canvas = camera.unwrap().render(&world);

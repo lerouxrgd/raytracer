@@ -15,11 +15,13 @@ fn main() {
     );
     h.cache_bounds();
 
+    let light = PointLight::new(Point::new(-10., 10., -10.), Color::white()).into();
+
     let world = World {
         shapes: vec![],
         csgs: vec![],
         groups: vec![h],
-        light: PointLight::new(Point::new(-10., 10., -10.), Color::white()).into(),
+        lights: vec![light],
         ..Default::default()
     };
 

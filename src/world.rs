@@ -10,7 +10,7 @@ use crate::tuples::{Color, Point};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct World {
-    pub light: Light,
+    pub lights: Vec<Light>,
     pub shapes: Vec<Shape>,
     pub groups: Vec<Group>,
     pub csgs: Vec<Csg>,
@@ -31,7 +31,7 @@ impl Default for World {
         let s2 = Sphere::default().with_transform(scaling(0.5, 0.5, 0.5));
 
         Self {
-            light: light.into(),
+            lights: vec![light.into()],
             shapes: vec![s1.into(), s2.into()],
             groups: vec![],
             csgs: vec![],
@@ -62,26 +62,30 @@ impl World {
     }
 
     pub fn shade_hit(&self, comps: Computations, remaining: u8) -> Color {
-        let light_intensity = self.light.intensity_at(comps.over_point, self);
-        let material = comps.shape.get_material();
-        let surface = material.lighting(
-            comps.shape,
-            self.light,
-            comps.over_point,
-            comps.eyev,
-            comps.normalv,
-            light_intensity,
-        );
+        let mut color = Color::black();
+        for &light in &self.lights {
+            let light_intensity = light.intensity_at(comps.over_point, self);
+            let material = comps.shape.get_material();
+            let surface = material.lighting(
+                comps.shape,
+                light,
+                comps.over_point,
+                comps.eyev,
+                comps.normalv,
+                light_intensity,
+            );
 
-        let reflected = self.reflected_color(comps, remaining);
-        let refracted = self.refracted_color(comps, remaining);
+            let reflected = self.reflected_color(comps, remaining);
+            let refracted = self.refracted_color(comps, remaining);
 
-        if material.reflective > 0. && material.transparency > 0. {
-            let reflectance = comps.schlick();
-            surface + reflected * reflectance + refracted * (1. - reflectance)
-        } else {
-            surface + reflected + refracted
+            if material.reflective > 0. && material.transparency > 0. {
+                let reflectance = comps.schlick();
+                color += surface + reflected * reflectance + refracted * (1. - reflectance);
+            } else {
+                color += surface + reflected + refracted
+            }
         }
+        color
     }
 
     pub fn color_at(&self, ray: Ray, remaining: u8) -> Color {
@@ -182,7 +186,7 @@ mod tests {
         assert!(c.equal_approx(Color::new(0.38066, 0.47583, 0.2855)));
 
         let mut w = World::default();
-        w.light = PointLight::new(Point::new(0., 0.25, 0.), Color::white()).into();
+        w.lights[0] = PointLight::new(Point::new(0., 0.25, 0.), Color::white()).into();
         let r = Ray::new(Point::new(0., 0., 0.), Vector::new(0., 0., 1.));
         let shape = w.shapes[1];
         let i = Intersection::new(0.5, shape);
@@ -209,7 +213,7 @@ mod tests {
             .equal_approx(w.shapes[1].get_material().color));
 
         let mut w = World::default();
-        w.light = PointLight::new(Point::new(0., 0., -10.), Color::white()).into();
+        w.lights[0] = PointLight::new(Point::new(0., 0., -10.), Color::white()).into();
         let s1 = Sphere::default();
         w.shapes.push(s1.into());
         let s2 = Sphere::default().with_transform(translation(0., 0., 10.));
@@ -276,7 +280,7 @@ mod tests {
             .equal_approx(Color::new(0.87677, 0.92436, 0.82918)));
 
         let mut w = World::default();
-        w.light = PointLight::new(Point::new(0., 0., 0.), Color::white()).into();
+        w.lights[0] = PointLight::new(Point::new(0., 0., 0.), Color::white()).into();
         let lower = Plane::default()
             .with_transform(translation(0., -1., 0.))
             .with_material(Material::default().reflective(1.));

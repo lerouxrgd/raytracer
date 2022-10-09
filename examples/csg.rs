@@ -46,11 +46,13 @@ fn main() {
             .with_material(Material::default().color(Color::new(0., 1., 0.))),
     );
 
+    let light = PointLight::new(Point::new(-10., 10., -10.), Color::white()).into();
+
     let world = World {
         shapes: vec![],
         groups: vec![],
         csgs: vec![Csg::new(CsgOp::Difference, outer, inner)],
-        light: PointLight::new(Point::new(-10., 10., -10.), Color::white()).into(),
+        lights: vec![light],
         ..Default::default()
     };
 

@@ -9,15 +9,15 @@
 - add: point-light
   at: [0, 100, -100]
   intensity: [0.25, 0.25, 0.25]
-# - add: light
-#   at: [0, -100, -100]
-#   intensity: [0.25, 0.25, 0.25]
-# - add: light
-#   at: [-100, 0, -100]
-#   intensity: [0.25, 0.25, 0.25]
-# - add: light
-#   at: [100, 0, -100]
-#   intensity: [0.25, 0.25, 0.25]
+- add: point-light
+  at: [0, -100, -100]
+  intensity: [0.25, 0.25, 0.25]
+- add: point-light
+  at: [-100, 0, -100]
+  intensity: [0.25, 0.25, 0.25]
+- add: point-light
+  at: [100, 0, -100]
+  intensity: [0.25, 0.25, 0.25]
 
 - define: mapped-cube
   material:

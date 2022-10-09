@@ -74,11 +74,13 @@ fn main() {
 
     let shapes = vec![floor, backdrop, middle, right, left];
 
+    let light = PointLight::new(Point::new(-10., 10., -10.), Color::white()).into();
+
     let world = World {
         shapes,
         groups: vec![],
         csgs: vec![],
-        light: PointLight::new(Point::new(-10., 10., -10.), Color::white()).into(),
+        lights: vec![light],
         ..Default::default()
     };
 

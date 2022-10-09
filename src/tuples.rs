@@ -1,4 +1,4 @@
-use std::ops::{Add, Deref, DerefMut, Div, Mul, Neg, Sub};
+use std::ops::{Add, AddAssign, Deref, DerefMut, Div, Mul, Neg, Sub};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Tuple([f32; 4]);
@@ -422,6 +422,12 @@ impl Mul<f32> for Color {
 
     fn mul(self, rhs: f32) -> Self::Output {
         Self(rhs * self.0)
+    }
+}
+
+impl AddAssign for Color {
+    fn add_assign(&mut self, other: Self) {
+        *self = *self + other;
     }
 }
 

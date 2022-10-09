@@ -249,7 +249,7 @@ mod tests {
     #[test]
     fn lighting_intensity() {
         let mut w = World::default();
-        w.light = PointLight::new(Point::new(0., 0., -10.), Color::white()).into();
+        w.lights[0] = PointLight::new(Point::new(0., 0., -10.), Color::white()).into();
         w.shapes[0].material_mut().ambient = 0.1;
         w.shapes[0].material_mut().diffuse = 0.9;
         w.shapes[0].material_mut().specular = 0.;
@@ -268,7 +268,7 @@ mod tests {
             assert!(
                 w.shapes[0].get_material().lighting(
                     w.shapes[0],
-                    w.light,
+                    w.lights[0],
                     pt,
                     eyev,
                     normalv,
