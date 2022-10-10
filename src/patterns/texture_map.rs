@@ -135,7 +135,9 @@ mod tests {
             ),
         ];
         for (p, u, v) in cases {
-            assert!(spherical_map(p) == (u, v));
+            let (res_u, res_v) = spherical_map(p);
+            assert!((res_u - u).abs() < 1e-4);
+            assert!((res_v - v).abs() < 1e-4);
         }
     }
 
