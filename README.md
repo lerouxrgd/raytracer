@@ -23,19 +23,19 @@ Options:
 
 ## Examples
 
-Check out comments in yaml scene files to get all resources (obj models, ppm textures)
-used in the examples commands.
-
-The rendered scene can be piped directly to [ImageMagick](https://imagemagick.org/) or
-outputted to a file.
+See comments in yaml scene files for information about how to get all resources (obj
+models, ppm textures) used in the examples commands.
 
 ### Basic scene
+
+The rendered scenes can be piped directly to [ImageMagick](https://imagemagick.org/) or
+outputted to a file.
 
 ```
 raytracer --scene samples/scenes/basic_scene.yaml | magick display
 ```
 
-![basic-scene](/samples/rendered/basic_scene.png?raw=true "basic-scene")
+[![basic-scene](/samples/rendered/basic_scene.png?raw=true "basic-scene")](/samples/scenes/basic_scene.yaml)
 
 ### Books's cover
 
@@ -43,7 +43,7 @@ raytracer --scene samples/scenes/basic_scene.yaml | magick display
 raytracer --scene samples/scenes/cover.yaml --out cover.ppm
 ```
 
-![cover](/samples/rendered/cover.png?raw=true "cover")
+[![cover](/samples/rendered/cover.png?raw=true "cover")](samples/scenes/cover.yaml)
 
 ### Spaceship model
 
@@ -53,7 +53,7 @@ raytracer --scene samples/scenes/space_ship.yaml \
           --out space_ship.ppm
 ```
 
-![spaceship](/samples/rendered/space_ship.png?raw=true "spaceship")
+[![spaceship](/samples/rendered/space_ship.png?raw=true "spaceship")](samples/scenes/space_ship.yaml)
 
 ### Teapot and Spaceship models
 
@@ -66,4 +66,69 @@ raytracer --scene samples/scenes/space_teapot.yaml \
           --out space_teapot.ppm
 ```
 
-![space-teapot](/samples/rendered/space_teapot.png?raw=true "space-teapot")
+[![space-teapot](/samples/rendered/space_teapot.png?raw=true "space-teapot")](samples/scenes/space_teapot.yaml)
+
+### Constructive Solid Geometry (CSG)
+
+```
+raytracer --scene samples/scenes/csg.yaml --out csg.ppm
+```
+
+[![csg](/samples/rendered/csg.png?raw=true "csg")](samples/scenes/csg.yaml)
+
+### Soft shadows (Area Light)
+
+```
+raytracer --scene samples/scenes/soft_shadows.yaml --out soft_shadows.ppm
+```
+
+[![soft-shadows](/samples/rendered/soft_shadows.png?raw=true "soft-shadows")](samples/scenes/soft_shadows.yaml)
+
+### Bounding Boxes - Dragons
+
+Beware that rendering this scene will be quite long (about 45 minutes on my machine with
+16 cores).
+
+```
+raytracer --scene samples/scenes/dragons.yaml \
+          --obj samples/obj/dragon.obj \
+          --out dragons.ppm
+```
+
+[![dragons](/samples/rendered/dragons.png?raw=true "dragons")](samples/scenes/dragons.yaml)
+
+### Texture Mapping - Patterns
+
+```
+raytracer --scene samples/scenes/checkered_cube.yaml --out checkered_cube.ppm
+```
+
+[![checkered-cube](/samples/rendered/checkered_cube.png?raw=true "checkered-cube")](samples/scenes/checkered_cube.yaml)
+
+| [![checkered-sphere](/samples/rendered/checkered_sphere.png?raw=true "checkered-sphere")](samples/scenes/checkered_sphere.yaml) | [![checkered-plane](/samples/rendered/checkered_plane.png?raw=true "checkered-plane")](samples/scenes/checkered_plane.yaml) | [![checkered-cylinder](/samples/rendered/checkered_cylinder.png?raw=true "checkered-cylinder")](samples/scenes/checkered_cylinder.yaml) |
+|---------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+
+### Texture Mapping - Image
+
+```
+raytracer --scene samples/scenes/earth.yaml \
+          --ppm samples/textures/earthmap1k.ppm \
+          --out earth.ppm
+```
+
+[![earth](/samples/rendered/earth.png?raw=true "earth")](samples/scenes/earth.yaml)
+
+### Texture Mapping - Skybox
+
+```
+raytracer --scene samples/scenes/skybox.yaml \
+          --ppm samples/textures/negx.ppm \
+          --ppm samples/textures/negy.ppm \
+          --ppm samples/textures/negz.ppm \
+          --ppm samples/textures/posx.ppm \
+          --ppm samples/textures/posy.ppm \
+          --ppm samples/textures/posz.ppm \
+          --out skybox.ppm
+```
+
+[![skybox](/samples/rendered/skybox.png?raw=true "skybox")](samples/scenes/skybox.yaml)
