@@ -1,7 +1,7 @@
 # Ray Tracer
 
 Rust implementation for [The Ray Tracer Challenge][rt-challenge]. Download the CLI from
-the [release]() page.
+the [release][] page.
 
 [rt-challenge]: http://raytracerchallenge.com/
 [release]: https://github.com/lerouxrgd/raytracer/releases
