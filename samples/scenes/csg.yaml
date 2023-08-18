@@ -1,7 +1,7 @@
 - add: camera
   width: 1280
   height: 720
-  field-of-view: pi/3
+  field-of-view: PI/3
   from: [0, 1.5, -5]
   to: [0, 0, 0]
   up: [0, 1, 0]
@@ -20,7 +20,7 @@
       - [scale, 1.3, 1.3, 1.3]
     - kind: cube
       transform:
-      - [rotate-y, pi/3]
+      - [rotate-y, PI/3]
   # inner
   - kind: csg
     op: union
@@ -31,20 +31,20 @@
       - kind: cylinder
         transform:
         - [scale, 0.6, 0.6, 0.6]
-        - [rotate-y, pi/3]
+        - [rotate-y, PI/3]
         material:
           color: [1, 0, 0]
       - kind: cylinder
         transform:
         - [scale, 0.6, 0.6, 0.6]
-        - [rotate-x, pi/2]
-        - [rotate-y, pi/3]
+        - [rotate-x, PI/2]
+        - [rotate-y, PI/3]
         material:
           color: [0, 0, 1]
     - kind: cylinder
       transform:
       - [scale, 0.6, 0.6, 0.6]
-      - [rotate-z, pi/2]
-      - [rotate-y, pi/3]
+      - [rotate-z, PI/2]
+      - [rotate-y, PI/3]
       material:
         color: [0, 1, 0]

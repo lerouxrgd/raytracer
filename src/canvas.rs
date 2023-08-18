@@ -163,6 +163,6 @@ mod tests {
 ";
         let reader = Cursor::new(ppm_data);
         let canvas = Canvas::from_ppm(reader).unwrap();
-        assert!(dbg!(canvas.pixel_at(0, 1)) == Color::new(0.75, 0.5, 0.25));
+        assert!(canvas.pixel_at(0, 1) == Color::new(0.75, 0.5, 0.25));
     }
 }

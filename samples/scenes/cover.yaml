@@ -81,7 +81,7 @@
     diffuse: 0
     specular: 0
   transform:
-    - [ rotate-x, pi/2 ]
+    - [ rotate-x, PI/2 ]
     - [ translate, 0, 0, 500 ]
 
 # ======================================================

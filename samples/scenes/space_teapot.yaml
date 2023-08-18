@@ -1,7 +1,7 @@
 - add: camera
   width: 1280
   height: 720
-  field-of-view: pi/3
+  field-of-view: PI/3
   from: [0, 1.5, 5]
   to: [0, 0.5, 0]
   up: [0, 1, 0]
@@ -11,7 +11,7 @@
 - add: group
   obj: space_ship.obj
   transform:
-    - [rotate-y, pi/4]
+    - [rotate-y, PI/4]
 - add: group
   obj: teapot_low.obj
   # material:
@@ -22,5 +22,5 @@
   #   shininess: 15
   transform:
     - [scale, 0.1, 0.1, 0.1]
-    - [rotate-x, -pi/2]
-    - [rotate-y, pi/6]
+    - [rotate-x, -PI/2]
+    - [rotate-y, PI/6]

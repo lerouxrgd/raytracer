@@ -1,7 +1,7 @@
 - add: camera
   width: 1280
   height: 720
-  field-of-view: pi/3
+  field-of-view: PI/3
   from: [0, 20, 50]
   to: [0, 10, 0]
   up: [0, 1, 0]
@@ -11,5 +11,5 @@
 - add: group
   obj: teapot_low.obj
   transform:
-    - [rotate-x, -pi/2]
-    - [rotate-y, pi/6]
+    - [rotate-x, -PI/2]
+    - [rotate-y, PI/6]

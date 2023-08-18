@@ -8,7 +8,7 @@ clap = { version = "4", features = ["derive"] }
 derivative = "2"
 image = { version = "0.24", default-features = false, features = ["pnm"] }
 lazy_static = "1"
-meval = "0.2"
+evalexpr = "11"
 ordered-float = "3"
 parking_lot = { version = "0.12", default-features = false }
 rand = "0.8"

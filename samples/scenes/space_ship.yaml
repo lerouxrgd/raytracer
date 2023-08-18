@@ -1,7 +1,7 @@
 - add: camera
   width: 1280
   height: 720
-  field-of-view: pi/3
+  field-of-view: PI/3
   from: [0, 1.5, 5]
   to: [0, 0, 0]
   up: [0, 1, 0]
@@ -11,4 +11,4 @@
 - add: group
   obj: space_ship.obj
   transform:
-    - [rotate-y, pi/4]
+    - [rotate-y, PI/4]

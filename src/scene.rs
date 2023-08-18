@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::{BufReader, Write};
 use std::path::PathBuf;
 
+use evalexpr::{eval_float_with_context, math_consts_context};
 use lazy_static::lazy_static;
 use parking_lot::RwLock;
 use serde::{de, Deserialize, Deserializer};
@@ -278,7 +279,7 @@ where
 
     let expr = Value::deserialize(deserializer)?;
     match expr {
-        Value::String(expr) => meval::eval_str(&expr)
+        Value::String(expr) => eval_float_with_context(&expr, &math_consts_context!().unwrap())
             .map(|v| v as f32)
             .map_err(de::Error::custom),
         Value::Number(num) => Ok(to_f32(&num)),
@@ -1036,16 +1037,20 @@ where
             },
 
             Op::RotateX => match operands {
-                [Value::String(angle)] => match meval::eval_str(angle).map(|angle| angle as f32) {
-                    Ok(angle) => {
-                        tranforms.push(TransformSpec::RotateX { angle });
+                [Value::String(angle)] => {
+                    match eval_float_with_context(angle, &math_consts_context!().unwrap())
+                        .map(|angle| angle as f32)
+                    {
+                        Ok(angle) => {
+                            tranforms.push(TransformSpec::RotateX { angle });
+                        }
+                        _ => {
+                            return Err(de::Error::custom(format!(
+                                "Invalid transform rotate-x operand value: {operands:?}",
+                            )))
+                        }
                     }
-                    _ => {
-                        return Err(de::Error::custom(format!(
-                            "Invalid transform rotate-x operand value: {operands:?}",
-                        )))
-                    }
-                },
+                }
                 [Value::Number(angle)] => {
                     tranforms.push(TransformSpec::RotateX {
                         angle: to_f32(angle),
@@ -1059,16 +1064,20 @@ where
             },
 
             Op::RotateY => match operands {
-                [Value::String(angle)] => match meval::eval_str(angle).map(|angle| angle as f32) {
-                    Ok(angle) => {
-                        tranforms.push(TransformSpec::RotateY { angle });
+                [Value::String(angle)] => {
+                    match eval_float_with_context(angle, &math_consts_context!().unwrap())
+                        .map(|angle| angle as f32)
+                    {
+                        Ok(angle) => {
+                            tranforms.push(TransformSpec::RotateY { angle });
+                        }
+                        _ => {
+                            return Err(de::Error::custom(format!(
+                                "Invalid transform rotate-y operand value: {operands:?}",
+                            )))
+                        }
                     }
-                    _ => {
-                        return Err(de::Error::custom(format!(
-                            "Invalid transform rotate-y operand value: {operands:?}",
-                        )))
-                    }
-                },
+                }
                 [Value::Number(angle)] => {
                     tranforms.push(TransformSpec::RotateY {
                         angle: to_f32(angle),
@@ -1082,16 +1091,20 @@ where
             },
 
             Op::RotateZ => match operands {
-                [Value::String(angle)] => match meval::eval_str(angle).map(|angle| angle as f32) {
-                    Ok(angle) => {
-                        tranforms.push(TransformSpec::RotateZ { angle });
+                [Value::String(angle)] => {
+                    match eval_float_with_context(angle, &math_consts_context!().unwrap())
+                        .map(|angle| angle as f32)
+                    {
+                        Ok(angle) => {
+                            tranforms.push(TransformSpec::RotateZ { angle });
+                        }
+                        _ => {
+                            return Err(de::Error::custom(format!(
+                                "Invalid transform rotate-z operand value: {operands:?}",
+                            )))
+                        }
                     }
-                    _ => {
-                        return Err(de::Error::custom(format!(
-                            "Invalid transform rotate-z operand value: {operands:?}",
-                        )))
-                    }
-                },
+                }
                 [Value::Number(angle)] => {
                     tranforms.push(TransformSpec::RotateZ {
                         angle: to_f32(angle),
@@ -1344,7 +1357,7 @@ mod tests {
 - add: camera
   width: 1280
   height: 720
-  field-of-view: pi/3
+  field-of-view: PI/3
   from: [0.0, 1.5, 5.0]
   to: [0, 0, 0]
   up: [0, 1, 0]
@@ -1354,7 +1367,7 @@ mod tests {
 - define: my-def
   extend: [some-other-def]
   transform:
-    - [rotate-y, pi/4]
+    - [rotate-y, PI/4]
     - [scale, 0.5, 0.5, 0.5]
     - [translate, 0, 1, 0]
   material:
