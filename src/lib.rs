@@ -2,6 +2,7 @@ pub mod bounds;
 pub mod camera;
 pub mod canvas;
 pub mod csg;
+pub mod effects;
 pub mod groups;
 pub mod intersections;
 pub mod lights;

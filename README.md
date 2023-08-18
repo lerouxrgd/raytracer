@@ -3,8 +3,13 @@
 Rust implementation for [The Ray Tracer Challenge][rt-challenge]. Download the CLI from
 the [release][] page.
 
+There are some extra post processing effects available:
+
+* Ordered [Dithering][]
+
 [rt-challenge]: http://raytracerchallenge.com/
 [release]: https://github.com/lerouxrgd/raytracer/releases
+[dithering]: https://blog.42yeah.is/rendering/2023/02/18/dithering.html
 
 ## Usage
 
@@ -14,11 +19,12 @@ The Ray Tracer Challenge CLI
 Usage: raytracer [OPTIONS] --scene <FILE>
 
 Options:
-      --scene <FILE>  A yaml description of the scene to render
-      --obj <FILE>    Optional obj models to add to the scene
-      --ppm <FILE>    Optional ppm textures to use as material
-      --out <OUT>     Optional output ppm file, defaults to stdout
-  -h, --help          Print help information
+      --scene <FILE>        A yaml description of the scene to render
+      --obj <FILE>          Optional obj models to add to the scene
+      --ppm <FILE>          Optional ppm textures to use as material
+      --dithering <PARAMS>  Add dithering effect to the final image [possible values: bayer2, bayer4, bayer8, bayer16, bayer-color]
+      --out <OUT>           Optional output ppm file, defaults to stdout
+  -h, --help                Print help
 ```
 
 ## Examples

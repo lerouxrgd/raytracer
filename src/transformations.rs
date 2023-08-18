@@ -124,7 +124,7 @@ pub fn view_transform(from: Point, to: Point, up: Vector) -> Matrix<4, 4> {
     let upn = up.normalize();
     let left = forward.cross(upn);
     let true_up = left.cross(forward);
-    let orientation = Matrix::<4, 4>::new([
+    let orientation = Matrix::<4, 4>::from([
         [left.x(), left.y(), left.z(), 0.],
         [true_up.x(), true_up.y(), true_up.z(), 0.],
         [-forward.x(), -forward.y(), -forward.z(), 0.],
@@ -253,7 +253,7 @@ mod tests {
         let to = Point::new(4., -2., 8.);
         let up = Vector::new(1., 1., 0.);
         let t = view_transform(from, to, up);
-        let exepected = Matrix::<4, 4>::new([
+        let exepected = Matrix::<4, 4>::from([
             [-0.50709, 0.50709, 0.67612, -2.36643],
             [0.76772, 0.60609, 0.12122, -2.82843],
             [-0.35857, 0.59761, -0.71714, 0.],

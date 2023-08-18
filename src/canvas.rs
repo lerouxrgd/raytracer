@@ -4,6 +4,7 @@ use std::io::{BufRead, Seek, Write};
 use image::codecs::pnm::{PixmapHeader, PnmDecoder, PnmEncoder, SampleEncoding};
 use image::{ColorType, ImageFormat, Rgb32FImage};
 
+use crate::effects::dithering::bayer_matrix;
 use crate::tuples::Color;
 
 pub struct Canvas {
@@ -31,6 +32,26 @@ impl Canvas {
 
     pub fn pixel_at(&self, x: u32, y: u32) -> Color {
         self.buffer.get_pixel(x, y).into()
+    }
+
+    pub fn apply_dithering<const N: usize>(&mut self, colored: bool) {
+        let bayer = bayer_matrix::<N>();
+        for y in 0..self.height() {
+            for x in 0..self.width() {
+                let d = bayer[x as usize % N][y as usize % N];
+                if colored {
+                    let c = self.pixel_at(x, y) + Color::new(d, d, d);
+                    self.write_pixel(x, y, c);
+                } else {
+                    let [r, g, b] = self.buffer.get_pixel(x, y).0;
+                    if r < d || g < d || b < d {
+                        self.write_pixel(x, y, Color::black());
+                    } else {
+                        self.write_pixel(x, y, Color::white());
+                    }
+                }
+            }
+        }
     }
 
     pub fn to_ppm<W: Write>(&self, mut writer: W) {

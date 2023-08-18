@@ -11,6 +11,7 @@ use serde::{de, Deserialize, Deserializer};
 use crate::camera::Camera;
 use crate::canvas::Canvas;
 use crate::csg::{Csg, CsgChild, CsgOp};
+use crate::effects::dithering::Dither;
 use crate::groups::Group;
 use crate::lights::{AreaLight, Light, PointLight};
 use crate::materials::Material;
@@ -30,6 +31,14 @@ lazy_static! {
 #[derive(Debug, Clone)]
 pub struct Scene {
     instructions: Vec<Instruction>,
+    dithering: Option<Dither>,
+}
+
+impl Scene {
+    pub fn with_dithering(mut self, dither: Option<Dither>) -> Self {
+        self.dithering = dither;
+        self
+    }
 }
 
 impl<'de> Deserialize<'de> for Scene {
@@ -52,7 +61,10 @@ impl<'de> Deserialize<'de> for Scene {
         }) {
             return Err(de::Error::custom("Missing light"));
         }
-        Ok(Scene { instructions })
+        Ok(Scene {
+            instructions,
+            dithering: None,
+        })
     }
 }
 
@@ -198,7 +210,15 @@ impl Scene {
             lights,
             ..Default::default()
         };
-        let canvas = camera.unwrap().render(&world);
+        let mut canvas = camera.unwrap().render(&world);
+        match self.dithering {
+            Some(Dither::Bayer2) => canvas.apply_dithering::<2>(false),
+            Some(Dither::Bayer4) => canvas.apply_dithering::<4>(false),
+            Some(Dither::Bayer8) => canvas.apply_dithering::<8>(false),
+            Some(Dither::Bayer16) => canvas.apply_dithering::<16>(false),
+            Some(Dither::BayerColor) => canvas.apply_dithering::<4>(true),
+            None => (),
+        }
 
         canvas.to_ppm(out);
         Ok(())

@@ -46,6 +46,25 @@ impl<const N: usize, const M: usize> DerefMut for Matrix<N, M> {
     }
 }
 
+impl<const N: usize, const M: usize> From<[[f32; M]; N]> for Matrix<N, M> {
+    fn from(source: [[f32; M]; N]) -> Self {
+        Self(source)
+    }
+}
+
+impl<const N: usize, const M: usize> Mul<Matrix<N, M>> for f32 {
+    type Output = Matrix<N, M>;
+
+    fn mul(self, mut rhs: Matrix<N, M>) -> Self::Output {
+        for j in 0..M {
+            for i in 0..N {
+                rhs[i][j] *= self;
+            }
+        }
+        rhs
+    }
+}
+
 impl<const N1: usize, const M: usize, const N2: usize> Mul<Matrix<M, N2>> for Matrix<N1, M> {
     type Output = Matrix<N1, N2>;
 
@@ -72,23 +91,19 @@ impl<const N: usize> Matrix<N, N> {
         }
         Self(res)
     }
+
+    pub fn size(&self) -> (usize, usize) {
+        (Self::N, Self::M)
+    }
 }
 
 impl Matrix<2, 2> {
-    pub fn new(rows: [[f32; Self::M]; Self::N]) -> Self {
-        Self(rows)
-    }
-
     pub fn determinant(&self) -> f32 {
         self[0][0] * self[1][1] - self[1][0] * self[0][1]
     }
 }
 
 impl Matrix<3, 3> {
-    pub fn new(rows: [[f32; Self::M]; Self::N]) -> Self {
-        Self(rows)
-    }
-
     pub fn submatrix(&self, row: usize, col: usize) -> Matrix<{ Self::N - 1 }, { Self::M - 1 }> {
         let mut res = [[0.; Self::M - 1]; Self::N - 1];
         for i in 0..Self::N {
@@ -129,10 +144,6 @@ impl Matrix<3, 3> {
 }
 
 impl Matrix<4, 4> {
-    pub fn new(rows: [[f32; Self::M]; Self::N]) -> Self {
-        Self(rows)
-    }
-
     pub fn submatrix(&self, row: usize, col: usize) -> Matrix<{ Self::N - 1 }, { Self::M - 1 }> {
         let mut res = [[0.; Self::M - 1]; Self::N - 1];
         for i in 0..Self::N {
@@ -230,28 +241,28 @@ mod tests {
 
     #[test]
     fn matrix_basics() {
-        let m1 = Matrix::<3, 3>::new([[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]]);
-        let m2 = Matrix::<3, 3>::new([[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]]);
-        let m3 = Matrix::<3, 3>::new([[6., 7., 8.], [3., 4., 5.], [0., 1., 2.]]);
+        let m1 = Matrix::<3, 3>::from([[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]]);
+        let m2 = Matrix::<3, 3>::from([[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]]);
+        let m3 = Matrix::<3, 3>::from([[6., 7., 8.], [3., 4., 5.], [0., 1., 2.]]);
         assert!(m1[0][0] == 0.);
         assert!(m1[1][0] == 3.);
         assert!(m1[2][1] == 7.);
         assert!(m1.equal_approx(m2));
         assert!(!m1.equal_approx(m3));
 
-        let m1 = Matrix::<4, 4>::new([
+        let m1 = Matrix::<4, 4>::from([
             [1., 2., 3., 4.],
             [5., 6., 7., 8.],
             [9., 8., 7., 6.],
             [5., 4., 3., 2.],
         ]);
-        let m2 = Matrix::<4, 4>::new([
+        let m2 = Matrix::<4, 4>::from([
             [-2., 1., 2., 3.],
             [3., 2., 1., -1.],
             [4., 3., 6., 5.],
             [1., 2., 7., 8.],
         ]);
-        let m3 = Matrix::<4, 4>::new([
+        let m3 = Matrix::<4, 4>::from([
             [20., 22., 50., 48.],
             [44., 54., 114., 108.],
             [40., 58., 110., 102.],
@@ -259,7 +270,7 @@ mod tests {
         ]);
         assert!(m1 * m2 == m3);
 
-        let m1 = Matrix::<4, 4>::new([
+        let m1 = Matrix::<4, 4>::from([
             [1., 2., 3., 4.],
             [2., 4., 4., 2.],
             [8., 6., 4., 1.],
@@ -268,7 +279,7 @@ mod tests {
         let t = Tuple::from([1., 2., 3., 1.]);
         assert!(m1 * t == Tuple::from([18., 24., 33., 1.]));
 
-        let m = Matrix::<4, 4>::new([
+        let m = Matrix::<4, 4>::from([
             [1., 2., 3., 4.],
             [5., 6., 7., 8.],
             [9., 8., 7., 6.],
@@ -279,13 +290,13 @@ mod tests {
         assert!(Matrix::identity() * m == m);
         assert!(Matrix::identity() * t == t);
 
-        let m1 = Matrix::<4, 4>::new([
+        let m1 = Matrix::<4, 4>::from([
             [1., 2., 3., 4.],
             [5., 6., 7., 8.],
             [9., 8., 7., 6.],
             [5., 4., 3., 2.],
         ]);
-        let m2 = Matrix::<4, 4>::new([
+        let m2 = Matrix::<4, 4>::from([
             [1., 5., 9., 5.],
             [2., 6., 8., 4.],
             [3., 7., 7., 3.],
@@ -297,38 +308,38 @@ mod tests {
 
     #[test]
     fn matrix_advanced() {
-        let m = Matrix::<2, 2>::new([[1., 5.], [-3., 2.]]);
+        let m = Matrix::<2, 2>::from([[1., 5.], [-3., 2.]]);
         assert!(m.determinant() == 17.);
 
-        let m1 = Matrix::<4, 4>::new([
+        let m1 = Matrix::<4, 4>::from([
             [1., 2., 3., 4.],
             [5., 6., 7., 8.],
             [9., 8., 7., 6.],
             [5., 4., 3., 2.],
         ]);
-        let m2 = Matrix::<3, 3>::new([[1., 2., 4.], [9., 8., 6.], [5., 4., 2.]]);
-        let m3 = Matrix::<2, 2>::new([[2., 4.], [8., 6.]]);
+        let m2 = Matrix::<3, 3>::from([[1., 2., 4.], [9., 8., 6.], [5., 4., 2.]]);
+        let m3 = Matrix::<2, 2>::from([[2., 4.], [8., 6.]]);
         assert!(m1.submatrix(1, 2) == m2);
         assert!(m2.submatrix(2, 0) == m3);
 
-        let m1 = Matrix::<3, 3>::new([[3., 5., 0.], [2., -1., -7.], [6., -1., 5.]]);
+        let m1 = Matrix::<3, 3>::from([[3., 5., 0.], [2., -1., -7.], [6., -1., 5.]]);
         let m2 = m1.submatrix(1, 0);
         assert!(m2.determinant() == 25.);
         assert!(m1.minor(1, 0) == 25.);
 
-        let m = Matrix::<3, 3>::new([[3., 5., 0.], [2., -1., -7.], [6., -1., 5.]]);
+        let m = Matrix::<3, 3>::from([[3., 5., 0.], [2., -1., -7.], [6., -1., 5.]]);
         assert!(m.minor(0, 0) == -12.);
         assert!(m.cofactor(0, 0) == -12.);
         assert!(m.minor(1, 0) == 25.);
         assert!(m.cofactor(1, 0) == -25.);
 
-        let m = Matrix::<3, 3>::new([[1., 2., 6.], [-5., 8., -4.], [2., 6., 4.]]);
+        let m = Matrix::<3, 3>::from([[1., 2., 6.], [-5., 8., -4.], [2., 6., 4.]]);
         assert!(m.cofactor(0, 0) == 56.);
         assert!(m.cofactor(0, 1) == 12.);
         assert!(m.cofactor(0, 2) == -46.);
         assert!(m.determinant() == -196.);
 
-        let m = Matrix::<4, 4>::new([
+        let m = Matrix::<4, 4>::from([
             [-2., -8., 3., 5.],
             [-3., 1., 7., 3.],
             [1., 2., -9., 6.],
@@ -340,14 +351,14 @@ mod tests {
         assert!(m.cofactor(0, 3) == 51.);
         assert!(m.determinant() == -4071.);
 
-        let m1 = Matrix::<4, 4>::new([
+        let m1 = Matrix::<4, 4>::from([
             [-5., 2., 6., -8.],
             [1., -5., 1., 8.],
             [7., 7., -6., -7.],
             [1., -3., 7., 4.],
         ]);
         let m2 = m1.inverse().unwrap();
-        let m3 = Matrix::<4, 4>::new([
+        let m3 = Matrix::<4, 4>::from([
             [0.21805, 0.45113, 0.24060, -0.04511],
             [-0.80827, -1.45677, -0.44361, 0.52068],
             [-0.07895, -0.22368, -0.05263, 0.19737],
@@ -360,13 +371,13 @@ mod tests {
         assert!(m2[2][3] == 105. / 532.);
         assert!(m2.equal_approx(m3));
 
-        let m1 = Matrix::<4, 4>::new([
+        let m1 = Matrix::<4, 4>::from([
             [1., 2., 3., 4.],
             [5., 6., 7., 8.],
             [9., 8., 7., 6.],
             [5., 4., 3., 2.],
         ]);
-        let m2 = Matrix::<4, 4>::new([
+        let m2 = Matrix::<4, 4>::from([
             [-2., 1., 2., 3.],
             [3., 2., 1., -1.],
             [4., 3., 6., 5.],
